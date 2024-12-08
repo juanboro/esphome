@@ -2,7 +2,6 @@ import logging
 
 from esphome import automation, core
 import esphome.codegen as cg
-from esphome.components import font
 import esphome.components.image as espImage
 from esphome.components.image import (
     CONF_USE_TRANSPARENCY,
@@ -131,7 +130,7 @@ ANIMATION_SCHEMA = cv.Schema(
     )
 )
 
-CONFIG_SCHEMA = cv.All(font.validate_pillow_installed, ANIMATION_SCHEMA)
+CONFIG_SCHEMA = ANIMATION_SCHEMA
 
 NEXT_FRAME_SCHEMA = automation.maybe_simple_id(
     {
@@ -271,7 +270,8 @@ async def to_code(config):
                 pos += 1
 
     elif config[CONF_TYPE] in ["RGB565", "TRANSPARENT_IMAGE"]:
-        data = [0 for _ in range(height * width * 2 * frames)]
+        bytes_per_pixel = 3 if transparent else 2
+        data = [0 for _ in range(height * width * bytes_per_pixel * frames)]
         pos = 0
         for frameIndex in range(frames):
             image.seek(frameIndex)
@@ -288,17 +288,13 @@ async def to_code(config):
                 G = g >> 2
                 B = b >> 3
                 rgb = (R << 11) | (G << 5) | B
-
-                if transparent:
-                    if rgb == 0x0020:
-                        rgb = 0
-                    if a < 0x80:
-                        rgb = 0x0020
-
                 data[pos] = rgb >> 8
                 pos += 1
                 data[pos] = rgb & 0xFF
                 pos += 1
+                if transparent:
+                    data[pos] = a
+                    pos += 1
 
     elif config[CONF_TYPE] in ["BINARY", "TRANSPARENT_BINARY"]:
         width8 = ((width + 7) // 8) * 8
