@@ -56,7 +56,8 @@ optional<RC5Data> RC5Protocol::decode(RemoteReceiveData src) {
   // move 1 bit / full clock cycle
   while (bits_in < NBITS) {
     if (state == EMPTY) {
-      if ((gotmark = src.expect_mark(BIT_TIME_US)) || (src.expect_space(BIT_TIME_US))) {
+      gotmark = src.expect_mark(BIT_TIME_US);
+      if (gotmark || src.expect_space(BIT_TIME_US)) {
         state = gotmark ? MARK : SPACE;
       } else
         break;
