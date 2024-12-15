@@ -142,14 +142,14 @@ class raw_in {
 };
 
 /// Analyze the statistics of a pulse data structure and print result
-optional<RFRawData> RFRAWProtocol::decode(RemoteReceiveData src) {
+optional<RFRAWData> RFRAWProtocol::decode(RemoteReceiveData src) {
   auto rawdata = src.get_raw_data();
 
   if (rawdata.size() == 0) {
     return {};
   }
 
-  RFRawData rfraw;
+  RFRAWData rfraw;
 
   rfraw.reserve(HEXSTR_BUILDER_SIZE);
   rfraw_histogram hist_gaps(TOLERANCE);
@@ -387,7 +387,7 @@ static bool parse_rfraw(RemoteTransmitData *dst, char const **p) {
   return true;
 }
 
-void RFRAWProtocol::encode(RemoteTransmitData *dst, const RFRawData &data) {
+void RFRAWProtocol::encode(RemoteTransmitData *dst, const RFRAWData &data) {
   const char *p = data.data();
 
   while (*p) {
@@ -400,7 +400,7 @@ void RFRAWProtocol::encode(RemoteTransmitData *dst, const RFRawData &data) {
   }
 }
 
-void RFRAWProtocol::dump(const RFRawData &data) {
+void RFRAWProtocol::dump(const RFRAWData &data) {
   std::string rest;
 
   rest = data;
