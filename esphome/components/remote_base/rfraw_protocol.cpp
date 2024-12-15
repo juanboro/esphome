@@ -16,6 +16,7 @@ typedef struct {
   int max;
 } hist_bin_t;
 
+// Do not use the remote_receiver tolerance here -- that is applied during matching
 #define TOLERANCE (0.2f)  // 20% tolerance should still discern between the pulse widths: 0.33, 0.66, 1.0
 
 class rfraw_histogram {
