@@ -398,8 +398,6 @@ void RFRAWProtocol::encode(RemoteTransmitData *dst, const RFRawData &data) {
     if (!parse_rfraw(dst, &p))
       break;
   }
-
-  dst->set_carrier_frequency(this->carrier_frequency_.value(x...));
 }
 
 void RFRAWProtocol::dump(const RFRawData &data) {

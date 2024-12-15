@@ -39,7 +39,10 @@ template<typename... Ts> class RFRawAction : public RemoteTransmitterActionBase<
  public:
   TEMPLATABLE_VALUE(std::string, data)
 
-  void encode(RemoteTransmitData *dst, Ts... x) override { RFRAWProtocol().encode(dst, x...); }
+  void encode(RemoteTransmitData *dst, Ts... x) override {
+    RFRAWProtocol().encode(dst, x...);
+    dst->set_carrier_frequency(this->carrier_frequency_.value(x...));
+  }
 };
 
 }  // namespace remote_base
