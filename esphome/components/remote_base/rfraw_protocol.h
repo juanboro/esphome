@@ -35,11 +35,14 @@ class RFRAWProtocol : public RemoteProtocol<RFRAWData> {
 
 DECLARE_REMOTE_PROTOCOL(RFRAW)
 
-template<typename... Ts> class RFRawAction : public RemoteTransmitterActionBase<Ts...> {
+template<typename... Ts> class RFRAWAction : public RemoteTransmitterActionBase<Ts...> {
  public:
+  TEMPLATABLE_VALUE(std::string, data)
+
   void encode(RemoteTransmitData *dst, Ts... x) override {
-    RFRAWProtocol().encode(dst, x...);
-    dst->set_carrier_frequency(this->carrier_frequency_.value(x...));
+    RFRAWData data{};
+    data = this->data_.value(x...);
+    RFRAWProtocol().encode(dst, data);
   }
 };
 

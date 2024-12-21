@@ -2001,4 +2001,4 @@ def rfraw_dumper(var, config):
 @register_action("rfraw", RFRAWAction, RFRAW_SCHEMA)
 async def rfraw_action(var, config, args):
     template_ = await cg.templatable(config[CONF_DATA], args, cg.std_string)
-    cg.add(var.set_address(template_))
+    cg.add(var.set_data(template_))
