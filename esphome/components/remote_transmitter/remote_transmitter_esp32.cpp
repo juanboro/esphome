@@ -38,6 +38,7 @@ void RemoteTransmitterComponent::dump_config() {
   }
 }
 
+#if ESP_IDF_VERSION_MAJOR >= 5
 void RemoteTransmitterComponent::digital_write(bool value) {
   rmt_symbol_word_t symbol = {
       .duration0 = 1,
@@ -60,6 +61,7 @@ void RemoteTransmitterComponent::digital_write(bool value) {
     this->status_set_warning();
   }
 }
+#endif
 
 void RemoteTransmitterComponent::configure_rmt_() {
 #if ESP_IDF_VERSION_MAJOR >= 5
