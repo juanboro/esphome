@@ -109,7 +109,7 @@ void RemoteTransmitterComponent::configure_rmt_() {
       this->mark_failed();
       return;
     }
-    this->digital_write(this->eot_level_);
+    this->digital_write(this->one_wire_ || this->inverted_);
     this->initialized_ = true;
   }
 
