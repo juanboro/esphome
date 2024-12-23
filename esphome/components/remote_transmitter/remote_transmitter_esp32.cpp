@@ -86,15 +86,15 @@ void RemoteTransmitterComponent::configure_rmt_() {
 
     // setup transmit config and send a dummy symbol to apply eot level
     bool eot_level = this->one_wire_ || this->inverted_;
-    memset(&this->transmit_, 0, sizeof(this->transmit_));
-    this->transmit_.loop_count = 0;
-    this->transmit_.flags.eot_level = eot_level;
     rmt_symbol_word_t rmt_item = {
         .duration0 = 1,
         .level0 = eot_level,
         .duration1 = 0,
         .level1 = eot_level,
     };
+    memset(&this->transmit_, 0, sizeof(this->transmit_));
+    this->transmit_.loop_count = 0;
+    this->transmit_.flags.eot_level = eot_level;
     error = rmt_transmit(this->channel_, this->encoder_, &rmt_item, sizeof(rmt_item), &this->transmit_);
     if (error != ESP_OK) {
       this->error_code_ = error;
