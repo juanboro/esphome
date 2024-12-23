@@ -210,7 +210,7 @@ void RemoteTransmitterComponent::send_internal(uint32_t send_times, uint32_t sen
     rmt_transmit_config_t config;
     memset(&config, 0, sizeof(config));
     config.loop_count = 0;
-    config.flags.eot_level = this->inverted_;
+    config.flags.eot_level = this->one_wire_ || this->inverted_;
     esp_err_t error = rmt_transmit(this->channel_, this->encoder_, this->rmt_temp_.data(),
                                    this->rmt_temp_.size() * sizeof(rmt_symbol_word_t), &config);
     if (error != ESP_OK) {
