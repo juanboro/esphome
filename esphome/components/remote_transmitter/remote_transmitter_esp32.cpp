@@ -53,15 +53,11 @@ void RemoteTransmitterComponent::digital_write(bool value) {
   if (error != ESP_OK) {
     ESP_LOGW(TAG, "rmt_transmit failed: %s", esp_err_to_name(error));
     this->status_set_warning();
-  } else {
-    this->status_clear_warning();
   }
   error = rmt_tx_wait_all_done(this->channel_, -1);
   if (error != ESP_OK) {
     ESP_LOGW(TAG, "rmt_tx_wait_all_done failed: %s", esp_err_to_name(error));
     this->status_set_warning();
-  } else {
-    this->status_clear_warning();
   }
 }
 
@@ -251,8 +247,6 @@ void RemoteTransmitterComponent::send_internal(uint32_t send_times, uint32_t sen
     if (error != ESP_OK) {
       ESP_LOGW(TAG, "rmt_tx_wait_all_done failed: %s", esp_err_to_name(error));
       this->status_set_warning();
-    } else {
-      this->status_clear_warning();
     }
     if (i + 1 < send_times)
       delayMicroseconds(send_wait);
