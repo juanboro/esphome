@@ -84,7 +84,7 @@ void RemoteTransmitterComponent::configure_rmt_() {
       return;
     }
 
-    // setup transmit config and send a dummy symbol to set eot level
+    // setup transmit config and send a dummy symbol to apply eot level
     bool eot_level = this->one_wire_ || this->inverted_;
     memset(&this->transmit_, 0, sizeof(this->transmit_));
     this->transmit_.loop_count = 0;
