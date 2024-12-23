@@ -70,6 +70,7 @@ class RemoteTransmitterComponent : public remote_base::RemoteTransmitterBase,
   bool one_wire_{false};
   rmt_channel_handle_t channel_{NULL};
   rmt_encoder_handle_t encoder_{NULL};
+  rmt_transmit_config_t transmit_;
 #else
   std::vector<rmt_item32_t> rmt_temp_;
 #endif
