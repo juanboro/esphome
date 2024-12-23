@@ -11,6 +11,7 @@ static const char *const TAG = "remote_transmitter";
 
 void RemoteTransmitterComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Remote Transmitter...");
+  this->inverted_ = this->pin_->is_inverted();
   this->configure_rmt_();
 }
 
@@ -34,6 +35,33 @@ void RemoteTransmitterComponent::dump_config() {
   if (this->is_failed()) {
     ESP_LOGE(TAG, "Configuring RMT driver failed: %s (%s)", esp_err_to_name(this->error_code_),
              this->error_string_.c_str());
+  }
+}
+
+void RemoteTransmitterComponent::digital_write(bool value) {
+  rmt_symbol_word_t symbol = {
+      .duration0 = 1,
+      .level0 = value,
+      .duration1 = 0,
+      .level1 = value,
+  };
+  rmt_transmit_config_t config;
+  memset(&config, 0, sizeof(config));
+  config.loop_count = 0;
+  config.flags.eot_level = value;
+  esp_err_t error = rmt_transmit(this->channel_, this->encoder_, &symbol, sizeof(symbol), &config);
+  if (error != ESP_OK) {
+    ESP_LOGW(TAG, "rmt_transmit failed: %s", esp_err_to_name(error));
+    this->status_set_warning();
+  } else {
+    this->status_clear_warning();
+  }
+  error = rmt_tx_wait_all_done(this->channel_, -1);
+  if (error != ESP_OK) {
+    ESP_LOGW(TAG, "rmt_tx_wait_all_done failed: %s", esp_err_to_name(error));
+    this->status_set_warning();
+  } else {
+    this->status_clear_warning();
   }
 }
 
@@ -83,32 +111,7 @@ void RemoteTransmitterComponent::configure_rmt_() {
       this->mark_failed();
       return;
     }
-
-    // setup transmit config and send a dummy symbol to apply eot level
-    bool eot_level = this->one_wire_ || this->inverted_;
-    rmt_symbol_word_t rmt_item = {
-        .duration0 = 1,
-        .level0 = eot_level,
-        .duration1 = 0,
-        .level1 = eot_level,
-    };
-    memset(&this->transmit_, 0, sizeof(this->transmit_));
-    this->transmit_.loop_count = 0;
-    this->transmit_.flags.eot_level = eot_level;
-    error = rmt_transmit(this->channel_, this->encoder_, &rmt_item, sizeof(rmt_item), &this->transmit_);
-    if (error != ESP_OK) {
-      this->error_code_ = error;
-      this->error_string_ = "in rmt_transmit";
-      this->mark_failed();
-      return;
-    }
-    error = rmt_tx_wait_all_done(this->channel_, -1);
-    if (error != ESP_OK) {
-      this->error_code_ = error;
-      this->error_string_ = "in rmt_tx_wait_all_done";
-      this->mark_failed();
-      return;
-    }
+    this->digital_write(this->eot_level_);
     this->initialized_ = true;
   }
 
@@ -146,13 +149,12 @@ void RemoteTransmitterComponent::configure_rmt_() {
   }
 
   c.tx_config.idle_output_en = true;
-  if (!this->pin_->is_inverted()) {
+  if (!this->inverted_) {
     c.tx_config.carrier_level = RMT_CARRIER_LEVEL_HIGH;
     c.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;
   } else {
     c.tx_config.carrier_level = RMT_CARRIER_LEVEL_LOW;
     c.tx_config.idle_level = RMT_IDLE_LEVEL_HIGH;
-    this->inverted_ = true;
   }
 
   esp_err_t error = rmt_config(&c);
@@ -233,8 +235,12 @@ void RemoteTransmitterComponent::send_internal(uint32_t send_times, uint32_t sen
   this->transmit_trigger_->trigger();
 #if ESP_IDF_VERSION_MAJOR >= 5
   for (uint32_t i = 0; i < send_times; i++) {
+    rmt_transmit_config_t config;
+    memset(&config, 0, sizeof(config));
+    config.loop_count = 0;
+    config.flags.eot_level = this->eot_level_;
     esp_err_t error = rmt_transmit(this->channel_, this->encoder_, this->rmt_temp_.data(),
-                                   this->rmt_temp_.size() * sizeof(rmt_symbol_word_t), &this->transmit_);
+                                   this->rmt_temp_.size() * sizeof(rmt_symbol_word_t), &config);
     if (error != ESP_OK) {
       ESP_LOGW(TAG, "rmt_transmit failed: %s", esp_err_to_name(error));
       this->status_set_warning();
