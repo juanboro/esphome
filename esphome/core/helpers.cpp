@@ -126,19 +126,21 @@ uint16_t crc16(const uint8_t *data, uint16_t len, uint16_t crc, uint16_t reverse
     }
   } else
 #endif
-      if (reverse_poly == 0xa001) {
-    while (len--) {
-      uint8_t combo = crc ^ (uint8_t) *data++;
-      crc = (crc >> 8) ^ CRC16_A001_LE_LUT_L[combo & 0x0F] ^ CRC16_A001_LE_LUT_H[combo >> 4];
-    }
-  } else {
-    while (len--) {
-      crc ^= *data++;
-      for (uint8_t i = 0; i < 8; i++) {
-        if (crc & 0x0001) {
-          crc = (crc >> 1) ^ reverse_poly;
-        } else {
-          crc >>= 1;
+  {
+    if (reverse_poly == 0xa001) {
+      while (len--) {
+        uint8_t combo = crc ^ (uint8_t) *data++;
+        crc = (crc >> 8) ^ CRC16_A001_LE_LUT_L[combo & 0x0F] ^ CRC16_A001_LE_LUT_H[combo >> 4];
+      }
+    } else {
+      while (len--) {
+        crc ^= *data++;
+        for (uint8_t i = 0; i < 8; i++) {
+          if (crc & 0x0001) {
+            crc = (crc >> 1) ^ reverse_poly;
+          } else {
+            crc >>= 1;
+          }
         }
       }
     }
