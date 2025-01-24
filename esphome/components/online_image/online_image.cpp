@@ -6,6 +6,9 @@ static const char *const TAG = "online_image";
 
 #include "image_decoder.h"
 
+#ifdef USE_ONLINE_IMAGE_BMP_SUPPORT
+#include "bmp_image.h"
+#endif
 #ifdef USE_ONLINE_IMAGE_PNG_SUPPORT
 #include "png_image.h"
 #endif
@@ -118,9 +121,14 @@ void OnlineImage::update() {
   ESP_LOGD(TAG, "Starting download");
   size_t total_size = this->downloader_->content_length;
 
+#ifdef USE_ONLINE_IMAGE_BMP_SUPPORT
+  if (this->format_ == ImageFormat::BMP) {
+    this->decoder_ = make_unique<BmpDecoder>(this);
+  }
+#endif  // ONLINE_IMAGE_BMP_SUPPORT
 #ifdef USE_ONLINE_IMAGE_PNG_SUPPORT
   if (this->format_ == ImageFormat::PNG) {
-    this->decoder_ = esphome::make_unique<PngDecoder>(this);
+    this->decoder_ = make_unique<PngDecoder>(this);
   }
 #endif  // ONLINE_IMAGE_PNG_SUPPORT
 

@@ -26,6 +26,10 @@ online_image:
     format: PNG
     type: RGB
     transparency: chroma_key
+  - id: online_binary_bmp
+    url: https://samples-files.com/samples/images/bmp/480-360-sample.bmp
+    format: BMP
+    type: BINARY
 
 # Check the set_url action
 esphome:

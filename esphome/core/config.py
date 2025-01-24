@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+from pathlib import Path
 
 from esphome import automation
 import esphome.codegen as cg
@@ -28,7 +29,6 @@ from esphome.const import (
     CONF_TRIGGER_ID,
     CONF_VERSION,
     KEY_CORE,
-    TARGET_PLATFORMS,
     __version__ as ESPHOME_VERSION,
 )
 from esphome.core import CORE, coroutine_with_priority
@@ -174,7 +174,31 @@ PRELOAD_CONFIG_SCHEMA = cv.Schema(
 )
 
 
-def preload_core_config(config, result):
+def _is_target_platform(name):
+    from esphome.loader import get_component
+
+    try:
+        if get_component(name, True).is_target_platform:
+            return True
+    except KeyError:
+        pass
+    return False
+
+
+def _list_target_platforms():
+    target_platforms = []
+    root = Path(__file__).parents[1]
+    for path in (root / "components").iterdir():
+        if not path.is_dir():
+            continue
+        if not (path / "__init__.py").is_file():
+            continue
+        if _is_target_platform(path.name):
+            target_platforms += [path.name]
+    return target_platforms
+
+
+def preload_core_config(config, result) -> str:
     with cv.prepend_path(CONF_ESPHOME):
         conf = PRELOAD_CONFIG_SCHEMA(config[CONF_ESPHOME])
 
@@ -187,12 +211,16 @@ def preload_core_config(config, result):
         conf[CONF_BUILD_PATH] = os.path.join(build_path, CORE.name)
     CORE.build_path = CORE.relative_internal_path(conf[CONF_BUILD_PATH])
 
-    target_platforms = [key for key in TARGET_PLATFORMS if key in config]
+    target_platforms = []
+
+    for domain, _ in config.items():
+        if _is_target_platform(domain):
+            target_platforms += [domain]
 
     if not target_platforms:
         raise cv.Invalid(
             "Platform missing. You must include one of the available platform keys: "
-            + ", ".join(TARGET_PLATFORMS),
+            + ", ".join(_list_target_platforms()),
             [CONF_ESPHOME],
         )
     if len(target_platforms) > 1:
@@ -202,6 +230,7 @@ def preload_core_config(config, result):
         )
 
     config[CONF_ESPHOME] = conf
+    return target_platforms[0]
 
 
 def include_file(path, basename):

@@ -1,10 +1,10 @@
 #pragma once
 
+#include "esphome/components/http_request/http_request.h"
+#include "esphome/components/image/image.h"
 #include "esphome/core/component.h"
 #include "esphome/core/defines.h"
 #include "esphome/core/helpers.h"
-#include "esphome/components/http_request/http_request.h"
-#include "esphome/components/image/image.h"
 
 #include "image_decoder.h"
 
@@ -27,6 +27,8 @@ enum ImageFormat {
   JPEG,
   /** PNG format. */
   PNG,
+  /** BMP format. */
+  BMP,
 };
 
 /**
@@ -146,7 +148,7 @@ class OnlineImage : public PollingComponent,
    */
   int buffer_height_;
 
-  friend void ImageDecoder::set_size(int width, int height);
+  friend bool ImageDecoder::set_size(int width, int height);
   friend void ImageDecoder::draw(int x, int y, int w, int h, const Color &color);
 };
 
