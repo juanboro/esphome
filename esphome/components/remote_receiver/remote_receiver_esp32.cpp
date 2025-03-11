@@ -17,7 +17,8 @@ static const uint32_t RMT_CLK_FREQ = 80000000;
 #if ESP_IDF_VERSION_MAJOR >= 5
 static bool IRAM_ATTR HOT rmt_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *event, void *arg) {
   RemoteReceiverComponentStore *store = (RemoteReceiverComponentStore *) arg;
-  rmt_rx_done_event_data_t *event_buffer = (rmt_rx_done_event_data_t *) (store->buffer + store->buffer_write);
+  uint8_t *buffer = (uint8_t *) store->buffer;
+  rmt_rx_done_event_data_t *event_buffer = (rmt_rx_done_event_data_t *) (buffer + store->buffer_write);
   uint32_t event_size = sizeof(rmt_rx_done_event_data_t);
   uint32_t next_write = store->buffer_write + event_size + event->num_symbols * sizeof(rmt_symbol_word_t);
   if (next_write + event_size + store->receive_size > store->buffer_size) {
@@ -31,7 +32,7 @@ static bool IRAM_ATTR HOT rmt_callback(rmt_channel_handle_t channel, const rmt_r
     next_write = store->buffer_write;
   }
   store->error =
-      rmt_receive(channel, (uint8_t *) store->buffer + next_write + event_size, store->receive_size, &store->config);
+      rmt_receive(channel, (uint8_t *) buffer + next_write + event_size, store->receive_size, &store->config);
   event_buffer->num_symbols = event->num_symbols;
   event_buffer->received_symbols = event->received_symbols;
   store->buffer_write = next_write;
@@ -42,6 +43,10 @@ static bool IRAM_ATTR HOT rmt_callback(rmt_channel_handle_t channel, const rmt_r
 void RemoteReceiverComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Remote Receiver...");
 #if ESP_IDF_VERSION_MAJOR >= 5
+  if (!this->use_rmt_) {
+    _setup_no_esp32_rmt();
+    return;
+  }
   rmt_rx_channel_config_t channel;
   memset(&channel, 0, sizeof(channel));
   channel.clk_src = RMT_CLK_SRC_DEFAULT;
@@ -157,6 +162,56 @@ void RemoteReceiverComponent::setup() {
 #endif
 }
 
+void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverComponentStore *arg) {
+  uint32_t *buffer = (uint32_t *) arg->buffer;
+  const uint32_t now = micros();
+  // If the lhs is 1 (rising edge) we should write to an uneven index and vice versa
+  const uint32_t next = (arg->buffer_write + 1) % arg->buffer_size;
+  const bool level = arg->pin.digital_read();
+  if (level != next % 2)
+    return;
+
+  // If next is buffer_read, we have hit an overflow
+  if (next == arg->buffer_read)
+    return;
+
+  const uint32_t last_change = buffer[arg->buffer_write];
+  const uint32_t time_since_change = now - last_change;
+  if (time_since_change <= arg->filter_symbols)
+    return;
+
+  arg->buffer_write = next;
+  buffer[next] = now;
+}
+
+void RemoteReceiverComponent::_setup_no_esp32_rmt() {
+  // this->pin_->setup();
+  auto &s = this->store_;
+  s.filter_symbols = this->filter_us_;
+  s.pin = this->pin_->to_isr();
+  s.buffer_size = this->buffer_size_;
+
+  this->high_freq_.start();
+  if (s.buffer_size % 2 != 0) {
+    // Make sure divisible by two. This way, we know that every 0bxxx0 index is a space and every 0bxxx1 index is a mark
+    s.buffer_size++;
+  }
+
+  s.buffer = new uint32_t[s.buffer_size];
+  void *buf = (void *) s.buffer;
+  memset(buf, 0, s.buffer_size * sizeof(uint32_t));
+
+  // First index is a space.
+  if (this->pin_->digital_read()) {
+    s.buffer_write = 1;
+    s.buffer_read = 1;
+  } else {
+    s.buffer_write = 0;
+    s.buffer_read = 0;
+  }
+  this->pin_->attach_interrupt(RemoteReceiverComponentStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
+}
+
 void RemoteReceiverComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "Remote Receiver:");
   LOG_PIN("  Pin: ", this->pin_);
@@ -184,8 +239,59 @@ void RemoteReceiverComponent::dump_config() {
   }
 }
 
+void RemoteReceiverComponent::no_rmt_loop() {
+  auto &s = this->store_;
+  uint32_t *buffer = (uint32_t *) s.buffer;
+
+  // copy write at to local variables, as it's volatile
+  const uint32_t write_at = s.buffer_write;
+  const uint32_t dist = (s.buffer_size + write_at - s.buffer_read) % s.buffer_size;
+  // signals must at least one rising and one leading edge
+  if (dist <= 1)
+    return;
+  const uint32_t now = micros();
+  if (now - buffer[write_at] < this->idle_us_) {
+    // The last change was fewer than the configured idle time ago.
+    return;
+  }
+
+  ESP_LOGVV(TAG, "read_at=%u write_at=%u dist=%u now=%u end=%u", s.buffer_read, write_at, dist, now, buffer[write_at]);
+
+  // Skip first value, it's from the previous idle level
+  s.buffer_read = (s.buffer_read + 1) % s.buffer_size;
+  uint32_t prev = s.buffer_read;
+  s.buffer_read = (s.buffer_read + 1) % s.buffer_size;
+  const uint32_t reserve_size = 1 + (s.buffer_size + write_at - s.buffer_read) % s.buffer_size;
+  this->temp_.clear();
+  this->temp_.reserve(reserve_size);
+  int32_t multiplier = s.buffer_read % 2 == 0 ? 1 : -1;
+
+  for (uint32_t i = 0; prev != write_at; i++) {
+    int32_t delta = buffer[s.buffer_read] - buffer[prev];
+    if (uint32_t(delta) >= this->idle_us_) {
+      // already found a space longer than idle. There must have been two pulses
+      break;
+    }
+
+    ESP_LOGVV(TAG, "  i=%u buffer[%u]=%u - buffer[%u]=%u -> %d", i, s.buffer_read, buffer[s.buffer_read], prev,
+              buffer[prev], multiplier * delta);
+    this->temp_.push_back(multiplier * delta);
+    prev = s.buffer_read;
+    s.buffer_read = (s.buffer_read + 1) % s.buffer_size;
+    multiplier *= -1;
+  }
+  s.buffer_read = (s.buffer_size + s.buffer_read - 1) % s.buffer_size;
+  this->temp_.push_back(this->idle_us_ * multiplier);
+
+  this->call_listeners_dumpers_();
+}
+
 void RemoteReceiverComponent::loop() {
 #if ESP_IDF_VERSION_MAJOR >= 5
+  if (!this->use_rmt_) {
+    this->no_rmt_loop();
+    return;
+  }
   if (this->store_.error != ESP_OK) {
     ESP_LOGE(TAG, "Receive error");
     this->error_code_ = this->store_.error;
@@ -197,8 +303,9 @@ void RemoteReceiverComponent::loop() {
     this->store_.overflow = false;
   }
   uint32_t buffer_write = this->store_.buffer_write;
+  uint8_t *buffer = (uint8_t *) this->store_.buffer;
   while (this->store_.buffer_read != buffer_write) {
-    rmt_rx_done_event_data_t *event = (rmt_rx_done_event_data_t *) (this->store_.buffer + this->store_.buffer_read);
+    rmt_rx_done_event_data_t *event = (rmt_rx_done_event_data_t *) (buffer + this->store_.buffer_read);
     uint32_t event_size = sizeof(rmt_rx_done_event_data_t);
     uint32_t next_read = this->store_.buffer_read + event_size + event->num_symbols * sizeof(rmt_symbol_word_t);
     if (next_read + event_size + this->store_.receive_size > this->store_.buffer_size) {
