@@ -23,6 +23,7 @@ from esphome.core import CORE, TimePeriod
 
 CONF_FILTER_SYMBOLS = "filter_symbols"
 CONF_RECEIVE_SYMBOLS = "receive_symbols"
+CONF_USE_ESP32_RMT = "use_esp32_rmt"
 
 AUTO_LOAD = ["remote_base"]
 remote_receiver_ns = cg.esphome_ns.namespace("remote_receiver")
@@ -140,6 +141,7 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
                 esp32_idf=192,
             ): cv.All(cv.only_with_esp_idf, cv.int_range(min=2)),
             cv.Optional(CONF_USE_DMA): cv.All(cv.only_with_esp_idf, cv.boolean),
+            cv.Optional(CONF_USE_ESP32_RMT): cv.All(cv.only_with_esp_idf, cv.boolean),
         }
     ).extend(cv.COMPONENT_SCHEMA)
 )
@@ -154,6 +156,8 @@ async def to_code(config):
             cg.add(var.set_receive_symbols(config[CONF_RECEIVE_SYMBOLS]))
             if CONF_USE_DMA in config:
                 cg.add(var.set_with_dma(config[CONF_USE_DMA]))
+            if CONF_USE_ESP32_RMT in config:
+                cg.add(var.set_use_esp32_rmt(config[CONF_USE_ESP32_RMT]))
             if CONF_CLOCK_RESOLUTION in config:
                 cg.add(var.set_clock_resolution(config[CONF_CLOCK_RESOLUTION]))
             if CONF_FILTER_SYMBOLS in config:

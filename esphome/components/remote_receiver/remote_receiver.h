@@ -31,8 +31,10 @@ struct RemoteReceiverComponentStore {
 };
 #elif defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5
 struct RemoteReceiverComponentStore {
+  static void gpio_intr(RemoteReceiverComponentStore *arg);
+
   /// Stores RMT symbols and rx done event data
-  volatile uint8_t *buffer{nullptr};
+  volatile void *buffer{nullptr};
   /// The position last written to
   volatile uint32_t buffer_write{0};
   /// The position last read from
@@ -43,6 +45,7 @@ struct RemoteReceiverComponentStore {
   uint32_t filter_symbols{0};
   esp_err_t error{ESP_OK};
   rmt_receive_config_t config;
+  ISRInternalGPIOPin pin;
 };
 #endif
 
@@ -73,6 +76,8 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void set_filter_symbols(uint32_t filter_symbols) { this->filter_symbols_ = filter_symbols; }
   void set_receive_symbols(uint32_t receive_symbols) { this->receive_symbols_ = receive_symbols; }
   void set_with_dma(bool with_dma) { this->with_dma_ = with_dma; }
+  void set_use_esp32_rmt(bool use_rmt) { this->use_rmt_ = use_rmt; }
+  void no_rmt_loop();
 #endif
   void set_buffer_size(uint32_t buffer_size) { this->buffer_size_ = buffer_size; }
   void set_filter_us(uint32_t filter_us) { this->filter_us_ = filter_us; }
@@ -82,10 +87,12 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
 #ifdef USE_ESP32
 #if ESP_IDF_VERSION_MAJOR >= 5
   void decode_rmt_(rmt_symbol_word_t *item, size_t item_count);
+  void _setup_no_esp32_rmt();
   rmt_channel_handle_t channel_{NULL};
   uint32_t filter_symbols_{0};
   uint32_t receive_symbols_{0};
   bool with_dma_{false};
+  bool use_rmt_{true};
 #else
   void decode_rmt_(rmt_item32_t *item, size_t item_count);
   RingbufHandle_t ringbuf_;
