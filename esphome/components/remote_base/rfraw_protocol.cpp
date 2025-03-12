@@ -1,6 +1,8 @@
 #include "rfraw_protocol.h"
 #include "esphome/core/log.h"
 
+// rfraw from rtl_433 --- somewhat limitted -- other than easy copy, raw ook pulses probably easier to work with
+
 namespace esphome {
 namespace remote_base {
 
@@ -259,7 +261,7 @@ optional<RFRAWData> RFRAWProtocol::decode(RemoteReceiveData src) {
         rfraw += format_hex(hexstr);
       }
       if (j >= HEXSTR_MAX_COUNT) {
-        fprintf(stderr, "Too many pulse groups (%u pulses missed in rfraw)\n", (rawdata.end() - rawpulses.it) / 2);
+        ESP_LOGI(TAG, "RFRAW: Too many pulse groups (%u pulses missed in rfraw)", (rawdata.end() - rawpulses.it) / 2);
       }
     }
   }
