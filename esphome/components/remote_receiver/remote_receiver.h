@@ -70,7 +70,9 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void setup() override;
   void dump_config() override;
   void loop() override;
-  float get_setup_priority() const override { return setup_priority::DATA; }
+  // receiver ISR setup must run after rmt transmitter setup to allow the same GPIO to be used by both
+  // (related: rmt_transmitter setup must run after rmt receiver setup)
+  float get_setup_priority() const override { return setup_priority::DATA - (this->use_rmt_ ? 0 : 2); }
 
 #if defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5
   void set_filter_symbols(uint32_t filter_symbols) { this->filter_symbols_ = filter_symbols; }
