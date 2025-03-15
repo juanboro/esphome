@@ -7,6 +7,7 @@
 #else
 #include "WiFiUdp.h"
 #endif
+#include <vector>
 
 namespace esphome {
 namespace udp_broadcast {
