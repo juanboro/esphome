@@ -21,15 +21,6 @@ jobs:
 
       - name: Merge Changes and Push
         run: |
-          git checkout origin/fix_rc5_recv
+          git checkout mymaster
           git merge upstream/dev
-          git push origin fix_rc5_recv
-          git checkout origin/esp32_soft_rmt
-          git merge upstream/dev
-          git push origin esp32_soft_rmt
-          git checkout origin/udp_broadcast
-          git merge upstream/dev
-          git push origin udp_broadcast
-          git checkout origin/mymaster
-          git merge upstream/dev origin/fix_rc5_recv origin/esp32_soft_rmt origin/udp_broadcast
           git push origin mymaster
