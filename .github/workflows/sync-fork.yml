@@ -25,3 +25,7 @@ jobs:
           git checkout dev
           git merge upstream/dev
           git push origin dev
+          git checkout udp_broadcast
+          git merge dev
+          git push origin udp_broadcast
+          
