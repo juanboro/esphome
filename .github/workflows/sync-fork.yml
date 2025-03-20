@@ -35,13 +35,5 @@ jobs:
       - name: Merge Changes and Push
         run: |
           git checkout udp_broadcast
-          git merge dev
+          git merge origin/dev
           git push origin udp_broadcast
-          
-      
-
-          
-          git checkout udp_broadcast
-          git merge dev
-          git push origin udp_broadcast
-          
