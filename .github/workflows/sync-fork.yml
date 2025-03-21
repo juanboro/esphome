@@ -22,12 +22,12 @@ jobs:
 
       - name: Merge Changes and Push
         run: |
-          git checkout dev
+          git checkout --track origin/dev
           git merge upstream/dev
           git push origin dev
-          git checkout udp_broadcast
+          git checkout --track origin/udp_broadcast
           git merge origin/dev
           git push origin udp_broadcast
-          git checkout mymaster
+          git checkout --track origin/mymaster
           git merge udp_broadcast dev
           git push origin mymaster
