@@ -8,7 +8,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Forked Repository branch - dev
+      - name: Checkout Forked Repository branch
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
@@ -30,6 +30,6 @@ jobs:
           git checkout --track origin/udp_broadcast
           git merge --no-edit origin/dev
           git push origin udp_broadcast
-          git checkout --track origin/mymaster
+          git checkout mymaster
           git merge --no-edit udp_broadcast dev
           git push origin mymaster
