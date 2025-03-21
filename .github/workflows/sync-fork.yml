@@ -20,8 +20,10 @@ jobs:
       - name: Fetch Upstream Changes
         run: git fetch upstream dev
 
-      - name: Merge Changes and Push
+      - name: setup credentials
         uses: fregante/setup-git-user@v2
+
+      - name: Merge Changes and Push
         run: |
           git checkout --track origin/dev
           git merge --no-edit upstream/dev
