@@ -20,11 +20,10 @@ jobs:
       - name: Fetch Upstream Changes
         run: git fetch upstream dev
 
-      - name: setup credentials
-        uses: fregante/setup-git-user@v2
-
       - name: Merge Changes and Push
         run: |
+          git config --global user.email "29214674+juanboro@users.noreply.github.com"
+          git config --global user.name "juanboro githubaction"
           git checkout --track origin/dev
           git merge --no-edit upstream/dev
           git push origin dev
