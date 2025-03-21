@@ -21,13 +21,14 @@ jobs:
         run: git fetch upstream dev
 
       - name: Merge Changes and Push
+        uses: fregante/setup-git-user@v2
         run: |
           git checkout --track origin/dev
-          git merge upstream/dev
+          git merge --no-edit upstream/dev
           git push origin dev
           git checkout --track origin/udp_broadcast
-          git merge origin/dev
+          git merge --no-edit origin/dev
           git push origin udp_broadcast
           git checkout --track origin/mymaster
-          git merge udp_broadcast dev
+          git merge --no-edit udp_broadcast dev
           git push origin mymaster
