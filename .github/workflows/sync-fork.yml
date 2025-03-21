@@ -20,6 +20,7 @@ jobs:
       - name: Fetch Upstream Changes
         run: git fetch upstream dev
 
+      # is this the *right* way to do this?  who knows - but it seems to work...
       - name: Merge Changes and Push
         run: |
           git config --global user.email "29214674+juanboro@users.noreply.github.com"
@@ -27,9 +28,14 @@ jobs:
           git checkout --track origin/dev
           git merge --no-edit upstream/dev
           git push origin dev
-          git checkout --track origin/udp_broadcast
-          git merge --no-edit origin/dev
-          git push origin udp_broadcast
+
+          current_branches="esp32_soft_rmt fix_rc5_recv udp_raw"
+          for branch in $current_branches
+          do
+            git checkout --track origin/$branch
+            git merge --no-edit origin/dev
+            git push origin $branch
+          done
           git checkout mymaster
-          git merge --no-edit udp_broadcast dev
+          git merge --no-edit $current_branches dev
           git push origin mymaster
