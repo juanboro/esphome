@@ -3,12 +3,10 @@
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
 
-#ifdef USE_LIBRETINY
-
 namespace esphome {
 namespace remote_receiver {
 
-static const char *const TAG = "remote_receiver.libretiny";
+static const char *const TAG = "remote_receiver";
 
 void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverComponentStore *arg) {
   const uint32_t now = micros();
@@ -119,5 +117,3 @@ void RemoteReceiverComponent::loop() {
 
 }  // namespace remote_receiver
 }  // namespace esphome
-
-#endif
