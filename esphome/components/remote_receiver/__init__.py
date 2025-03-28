@@ -24,9 +24,11 @@ from esphome.core import CORE, TimePeriod
 CONF_FILTER_SYMBOLS = "filter_symbols"
 CONF_RECEIVE_SYMBOLS = "receive_symbols"
 CONF_USE_ESP32_RMT = "use_esp32_rmt"
+CONF_ESP32_ID = "esp32_rmt_id"
 
 AUTO_LOAD = ["remote_base"]
 remote_receiver_ns = cg.esphome_ns.namespace("remote_receiver")
+remote_receiver_esp32_ns = cg.esphome_ns.namespace("remote_receiver_esp32")
 remote_base_ns = cg.esphome_ns.namespace("remote_base")
 
 ToleranceMode = remote_base_ns.enum("ToleranceMode")
@@ -61,6 +63,10 @@ RemoteReceiverComponent = remote_receiver_ns.class_(
     "RemoteReceiverComponent", remote_base.RemoteReceiverBase, cg.Component
 )
 
+RemoteReceiverESPRMTComponent = remote_receiver_esp32_ns.class_(
+    "RemoteReceiverComponent", remote_base.RemoteReceiverBase, cg.Component
+)
+
 
 def validate_tolerance(value):
     if isinstance(value, dict):
@@ -86,10 +92,14 @@ def validate_tolerance(value):
 
 
 MULTI_CONF = True
+
+
 CONFIG_SCHEMA = remote_base.validate_triggers(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(RemoteReceiverComponent),
+            cv.GenerateID(CONF_ESP32_ID): cv.declare_id(RemoteReceiverESPRMTComponent),
+            cv.Optional(CONF_USE_ESP32_RMT): cv.All(cv.only_with_esp_idf, cv.boolean),
             cv.Required(CONF_PIN): cv.All(pins.internal_gpio_input_pin_schema),
             cv.Optional(CONF_DUMP, default=[]): remote_base.validate_dumpers,
             cv.Optional(CONF_TOLERANCE, default="25%"): validate_tolerance,
@@ -141,7 +151,6 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
                 esp32_idf=192,
             ): cv.All(cv.only_with_esp_idf, cv.int_range(min=2)),
             cv.Optional(CONF_USE_DMA): cv.All(cv.only_with_esp_idf, cv.boolean),
-            cv.Optional(CONF_USE_ESP32_RMT): cv.All(cv.only_with_esp_idf, cv.boolean),
         }
     ).extend(cv.COMPONENT_SCHEMA)
 )
@@ -149,15 +158,17 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
 
 async def to_code(config):
     pin = await cg.gpio_pin_expression(config[CONF_PIN])
-    if CORE.is_esp32:
+    if CORE.is_esp32 and (
+        CONF_USE_ESP32_RMT not in config or config[CONF_USE_ESP32_RMT]
+    ):
+        config[CONF_ESP32_ID].id = config[CONF_ID].id
         if esp32_rmt.use_new_rmt_driver():
-            var = cg.new_Pvariable(config[CONF_ID], pin)
+            var = cg.new_Pvariable(config[CONF_ESP32_ID], pin)
+
             cg.add(var.set_rmt_symbols(config[CONF_RMT_SYMBOLS]))
             cg.add(var.set_receive_symbols(config[CONF_RECEIVE_SYMBOLS]))
             if CONF_USE_DMA in config:
                 cg.add(var.set_with_dma(config[CONF_USE_DMA]))
-            if CONF_USE_ESP32_RMT in config:
-                cg.add(var.set_use_esp32_rmt(config[CONF_USE_ESP32_RMT]))
             if CONF_CLOCK_RESOLUTION in config:
                 cg.add(var.set_clock_resolution(config[CONF_CLOCK_RESOLUTION]))
             if CONF_FILTER_SYMBOLS in config:
@@ -165,10 +176,12 @@ async def to_code(config):
         else:
             if (rmt_channel := config.get(CONF_RMT_CHANNEL, None)) is not None:
                 var = cg.new_Pvariable(
-                    config[CONF_ID], pin, rmt_channel, config[CONF_MEMORY_BLOCKS]
+                    config[CONF_ESP32_ID], pin, rmt_channel, config[CONF_MEMORY_BLOCKS]
                 )
             else:
-                var = cg.new_Pvariable(config[CONF_ID], pin, config[CONF_MEMORY_BLOCKS])
+                var = cg.new_Pvariable(
+                    config[CONF_ESP32_ID], pin, config[CONF_MEMORY_BLOCKS]
+                )
             cg.add(var.set_clock_divider(config[CONF_CLOCK_DIVIDER]))
     else:
         var = cg.new_Pvariable(config[CONF_ID], pin)
