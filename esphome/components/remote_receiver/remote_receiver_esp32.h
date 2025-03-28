@@ -7,19 +7,17 @@
 
 #include <cinttypes>
 
-#if defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5
+#if ESP_IDF_VERSION_MAJOR >= 5
 #include <driver/rmt_rx.h>
 #endif
 
 namespace esphome {
 namespace remote_receiver_esp32 {
 
-#if defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5
+#if ESP_IDF_VERSION_MAJOR >= 5
 struct RemoteReceiverComponentStore {
-  static void gpio_intr(RemoteReceiverComponentStore *arg);
-
   /// Stores RMT symbols and rx done event data
-  volatile void *buffer{nullptr};
+  volatile uint8_t *buffer{nullptr};
   /// The position last written to
   volatile uint32_t buffer_write{0};
   /// The position last read from
@@ -30,7 +28,6 @@ struct RemoteReceiverComponentStore {
   uint32_t filter_symbols{0};
   esp_err_t error{ESP_OK};
   rmt_receive_config_t config;
-  ISRInternalGPIOPin pin;
 };
 #endif
 
@@ -40,7 +37,7 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
 
 {
  public:
-#if defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR < 5
+#if ESP_IDF_VERSION_MAJOR < 5
   RemoteReceiverComponent(InternalGPIOPin *pin, uint8_t mem_block_num = 1)
       : RemoteReceiverBase(pin), remote_base::RemoteRMTChannel(mem_block_num) {}
 
@@ -52,19 +49,12 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void setup() override;
   void dump_config() override;
   void loop() override;
-#if defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5
+  float get_setup_priority() const override { return setup_priority::DATA; }
+#if ESP_IDF_VERSION_MAJOR >= 5
   void set_filter_symbols(uint32_t filter_symbols) { this->filter_symbols_ = filter_symbols; }
   void set_receive_symbols(uint32_t receive_symbols) { this->receive_symbols_ = receive_symbols; }
   void set_with_dma(bool with_dma) { this->with_dma_ = with_dma; }
-  void set_use_esp32_rmt(bool use_rmt) { this->use_rmt_ = use_rmt; }
-  void no_rmt_loop();
-  // receiver ISR setup must run after rmt transmitter setup to allow the same GPIO to be used by both
-  // (related: rmt_transmitter setup must run after rmt receiver setup)
-  float get_setup_priority() const override { return setup_priority::DATA - (this->use_rmt_ ? 0 : 2); }
-#else
-  float get_setup_priority() const override { return setup_priority::DATA; }
 #endif
-
   void set_buffer_size(uint32_t buffer_size) { this->buffer_size_ = buffer_size; }
   void set_filter_us(uint32_t filter_us) { this->filter_us_ = filter_us; }
   void set_idle_us(uint32_t idle_us) { this->idle_us_ = idle_us; }
@@ -72,12 +62,10 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
  protected:
 #if ESP_IDF_VERSION_MAJOR >= 5
   void decode_rmt_(rmt_symbol_word_t *item, size_t item_count);
-  void _setup_no_esp32_rmt();
   rmt_channel_handle_t channel_{NULL};
   uint32_t filter_symbols_{0};
   uint32_t receive_symbols_{0};
   bool with_dma_{false};
-  bool use_rmt_{true};
 #else
   void decode_rmt_(rmt_item32_t *item, size_t item_count);
   RingbufHandle_t ringbuf_;
@@ -85,7 +73,7 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   esp_err_t error_code_{ESP_OK};
   std::string error_string_{""};
 
-#if (defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5)
+#if ESP_IDF_VERSION_MAJOR >= 5
   RemoteReceiverComponentStore store_;
   HighFrequencyLoopRequester high_freq_;
 #endif
