@@ -37,5 +37,7 @@ jobs:
             git push origin $branch
           done
           git checkout mymaster
-          git merge --no-edit $current_branches dev
+          git merge --no-ff --no-commit $current_branches dev
+          git reset -- .github
+          git commit -m  "Merge branches 'esp32_soft_rmt', 'fix_rc5_recv' and 'udp_broadcast' into mymaster"
           git push origin mymaster
