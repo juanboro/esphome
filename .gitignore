@@ -142,6 +142,3 @@ sdkconfig.*
 
 /components
 /managed_components
-
-# their github actions
-.github/** 
