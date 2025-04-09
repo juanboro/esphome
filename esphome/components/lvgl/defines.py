@@ -29,10 +29,14 @@ def add_define(macro, value="1"):
     lv_defines[macro] = value
 
 
-def literal(arg):
+def literal(arg) -> MockObj:
     if isinstance(arg, str):
         return MockObj(arg)
     return arg
+
+
+def static_cast(type, value):
+    return literal(f"static_cast<{type}>({value})")
 
 
 def call_lambda(lamb: LambdaExpression):
