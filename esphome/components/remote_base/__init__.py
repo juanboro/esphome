@@ -1965,45 +1965,6 @@ async def mirage_action(var, config, args):
     cg.add(var.set_code(template_))
 
 
-# RFRAW
-RFRAWData, RFRAWBinarySensor, RFRAWTrigger, RFRAWAction, RFRAWDumper = declare_protocol(
-    "RFRAW"
-)
-RFRAW_SCHEMA = cv.Schema(
-    {
-        cv.Required(CONF_DATA): cv.string,
-    }
-)
-
-
-@register_binary_sensor("rfraw", RFRAWBinarySensor, RFRAW_SCHEMA)
-def rfraw_binary_sensor(var, config):
-    cg.add(
-        var.set_data(
-            cg.StructInitializer(
-                RFRAWData,
-                ("data", config[CONF_DATA]),
-            )
-        )
-    )
-
-
-@register_trigger("rfraw", RFRAWTrigger, RFRAWData)
-def rfraw_trigger(var, config):
-    pass
-
-
-@register_dumper("rfraw", RFRAWDumper)
-def rfraw_dumper(var, config):
-    pass
-
-
-@register_action("rfraw", RFRAWAction, RFRAW_SCHEMA)
-async def rfraw_action(var, config, args):
-    template_ = await cg.templatable(config[CONF_DATA], args, cg.std_string)
-    cg.add(var.set_data(template_))
-
-
 # Toto
 (
     TotoData,
