@@ -41,6 +41,6 @@ jobs:
           do
             git merge --no-ff --no-commit $branch || true
             git reset -- .github
-            git commit -m "Merge branch: $branch into mymaster"
+            git commit -m "Merge branch: $branch into mymaster" || true
           done
           git push origin mymaster
