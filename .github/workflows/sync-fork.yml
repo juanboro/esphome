@@ -39,7 +39,7 @@ jobs:
           git checkout mymaster
           for branch in $current_branches dev
           do
-            git merge --no-ff --no-commit $branch
+            git merge --no-ff --no-commit $branch || true
             git reset -- .github
             git commit -m "Merge branch: $branch into mymaster"
           done
