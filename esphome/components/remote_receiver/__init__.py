@@ -99,7 +99,7 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
         {
             cv.GenerateID(): cv.declare_id(RemoteReceiverComponent),
             cv.GenerateID(CONF_ESP32_ID): cv.declare_id(RemoteReceiverESPRMTComponent),
-            cv.Optional(CONF_USE_ESP32_RMT): cv.All(cv.only_with_esp_idf, cv.boolean),
+            cv.Optional(CONF_USE_ESP32_RMT): cv.All(cv.only_on_esp32, cv.boolean),
             cv.Required(CONF_PIN): cv.All(pins.internal_gpio_input_pin_schema),
             cv.Optional(CONF_DUMP, default=[]): remote_base.validate_dumpers,
             cv.Optional(CONF_TOLERANCE, default="25%"): validate_tolerance,
