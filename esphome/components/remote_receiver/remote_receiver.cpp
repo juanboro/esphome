@@ -25,12 +25,14 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
   if (time_since_change <= arg->filter_us)
     return;
 
-  arg->buffer[arg->buffer_write_at = next] = now;
+  arg->buffer_write_at = next;
+  arg->buffer[arg->buffer_write_at] = now;
 }
 
 void RemoteReceiverComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Remote Receiver...");
-  this->pin_->setup();
+  if (!this->no_init_pin_)
+    this->pin_->setup();
   auto &s = this->store_;
   s.filter_us = this->filter_us_;
   s.pin = this->pin_->to_isr();
