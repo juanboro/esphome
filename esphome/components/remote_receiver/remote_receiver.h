@@ -34,15 +34,16 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void setup() override;
   void dump_config() override;
   void loop() override;
-#if defined(USE_ESP32) && ESP_IDF_VERSION_MAJOR >= 5
+#if defined(USE_ESP32)
   // receiver ISR setup must run after rmt transmitter setup to allow the same GPIO to be used by both
-  // (related: rmt_transmitter setup must run after rmt receiver setup)
+  // (related: rmt_transmitter setup must run AFTER rmt receiver setup)
   float get_setup_priority() const override { return setup_priority::DATA - 2; }
 #endif
 
   void set_buffer_size(uint32_t buffer_size) { this->buffer_size_ = buffer_size; }
   void set_filter_us(uint32_t filter_us) { this->filter_us_ = filter_us; }
   void set_idle_us(uint32_t idle_us) { this->idle_us_ = idle_us; }
+  void set_no_init_pin(bool no_init_pin) { this->no_init_pin_ = no_init_pin; }
 
  protected:
   RemoteReceiverComponentStore store_;
@@ -51,6 +52,8 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   uint32_t buffer_size_{};
   uint32_t filter_us_{10};
   uint32_t idle_us_{10000};
+
+  bool no_init_pin_{false};
 };
 
 }  // namespace remote_receiver

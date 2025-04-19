@@ -3,6 +3,7 @@ import esphome.codegen as cg
 from esphome.components import esp32_rmt, remote_base
 import esphome.config_validation as cv
 from esphome.const import (
+    CONF_ALLOW_OTHER_USES,
     CONF_BUFFER_SIZE,
     CONF_CLOCK_DIVIDER,
     CONF_CLOCK_RESOLUTION,
@@ -203,3 +204,5 @@ async def to_code(config):
     cg.add(var.set_buffer_size(config[CONF_BUFFER_SIZE]))
     cg.add(var.set_filter_us(config[CONF_FILTER]))
     cg.add(var.set_idle_us(config[CONF_IDLE]))
+    if CONF_ALLOW_OTHER_USES in config[CONF_PIN]:
+        cg.add(var.set_no_init_pin(config[CONF_PIN][CONF_ALLOW_OTHER_USES]))

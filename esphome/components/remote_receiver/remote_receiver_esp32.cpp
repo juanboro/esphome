@@ -105,7 +105,8 @@ void RemoteReceiverComponent::setup() {
     return;
   }
 #else
-  this->pin_->setup();
+  if (!this->no_init_pin_)
+    this->pin_->setup();
   rmt_config_t rmt{};
   this->config_rmt(rmt);
   rmt.gpio_num = gpio_num_t(this->pin_->get_pin());
