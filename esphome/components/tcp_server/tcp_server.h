@@ -49,6 +49,12 @@ class TCPServerBaseComponent : public Component {
 
   virtual void write(const std::string &data) {}
   virtual void write(const std::string &data, const std::string &client_id) {}
+  virtual void write(const char *data, size_t size) {}
+  virtual void write(const char *data, size_t size, const std::string &client_id) {}
+
+  virtual void disconnect() {}
+  virtual void disconnect(const std::string &client_id) {}
+
   void register_onmessage_trigger(TCPServerTrigger *trig) { this->triggers_onmsg_.push_back(trig); }
   void register_onconnect_trigger(TCPServerOnConnectTrigger *trig) { this->triggers_on_connect_.push_back(trig); }
   void register_ondisconnect_trigger(TCPServerOnDisconnectTrigger *trig) {
@@ -82,6 +88,11 @@ class TCPServerComponent : public TCPServerBaseComponent {
 
   void write(const std::string &data);
   void write(const std::string &data, const std::string &client_id);
+  void write(const char *data, size_t size);
+  void write(const char *data, size_t size, const std::string &client_id);
+
+  void disconnect();
+  void disconnect(const std::string &client_id);
 
   int get_client_count() override { return this->clients_.size(); }
 
@@ -111,6 +122,8 @@ class TCPServerComponent : public TCPServerBaseComponent {
 
   void write(const std::string &data);
   void write(const std::string &data, const std::string &client_id);
+  void write(const char *data, size_t size);
+  void write(const char *data, size_t size, const std::string &client_id);
 
   int get_client_count() override { return this->clients_.size(); }
 

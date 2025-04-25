@@ -123,11 +123,44 @@ void TCPServerComponent::write(const std::string &data) {
   }
 }
 
+void TCPServerComponent::write(const char *data, size_t size) {
+  for (Client &client : this->clients_) {
+    if (client.disconnected)
+      continue;
+    client.socket->write(data, size);
+  }
+}
+
 void TCPServerComponent::write(const std::string &data, const std::string &client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
     client.socket->write(data.c_str(), data.size());
+  }
+}
+void TCPServerComponent::write(const char *data, size_t size, const std::string &client_id) {
+  for (Client &client : this->clients_) {
+    if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
+      continue;
+    client.socket->write(data, size);
+  }
+}
+
+void TCPServerComponent::disconnect(const std::string &client_id) {
+  for (Client &client : this->clients_) {
+    if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
+      continue;
+    client.socket->shutdown(SHUT_RDWR);
+    client.disconnected = true;
+  }
+}
+
+void TCPServerComponent::disconnect() {
+  for (Client &client : this->clients_) {
+    if (client.disconnected)
+      continue;
+    client.socket->shutdown(SHUT_RDWR);
+    client.disconnected = true;
   }
 }
 
@@ -217,11 +250,45 @@ void TCPServerComponent::write(const std::string &data) {
   }
 }
 
+void TCPServerComponent::write(const char *data, size_t size) {
+  for (Client &client : this->clients_) {
+    if (client.disconnected)
+      continue;
+    client.client->write(data, size);
+  }
+}
+
 void TCPServerComponent::write(const std::string &data, const std::string &client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
     client.client->write(data.c_str(), data.size());
+  }
+}
+
+void TCPServerComponent::write(const char *data, size_t size, const std::string &client_id) {
+  for (Client &client : this->clients_) {
+    if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
+      continue;
+    client.client->write(data, size);
+  }
+}
+
+void TCPServerComponent::disconnect(const std::string &client_id) {
+  for (Client &client : this->clients_) {
+    if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
+      continue;
+    client.client->stop();
+    client.disconnected = true;
+  }
+}
+
+void TCPServerComponent::disconnect() {
+  for (Client &client : this->clients_) {
+    if (client.disconnected)
+      continue;
+    client.client->stop();
+    client.disconnected = true;
   }
 }
 
