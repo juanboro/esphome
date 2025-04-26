@@ -31,7 +31,6 @@ async def to_code(config):
         cg.add(var.set_tcp_server(server))
 
     await cg.register_component(var, config)
-    await remote_base.register_transmittable(var, config)
 
     if remote_base.CONF_RECEIVER_ID in config:
         await remote_base.register_listener(var, config)
@@ -41,3 +40,4 @@ async def to_code(config):
         transmitter_ = await cg.get_variable(config[remote_base.CONF_TRANSMITTER_ID])
         cg.add(var.set_transmitter(transmitter_))
         cg.add(var.set_can_tx(True))
+        await remote_base.register_transmittable(var, config)
