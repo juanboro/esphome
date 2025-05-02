@@ -10,6 +10,7 @@ GPL-V3 and: https://github.com/tube0013/esphome-stream-server-v2
 #include "esphome/core/automation.h"
 #include "esphome/core/helpers.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/components/uart/uart.h"
 
 #include <string>
 #include <vector>
@@ -41,7 +42,7 @@ class TCPServerBaseComponent : public Component {
   TCPServerBaseComponent() {}
 
   void setup();
-  virtual void loop() {}
+  void loop();
   void dump_config();
   virtual void on_shutdown() {}
 
@@ -65,6 +66,7 @@ class TCPServerBaseComponent : public Component {
   void set_port(uint16_t port) { this->port_ = port; }
   virtual int get_client_count() { return 0; }
   void set_count_sensor(binary_sensor::BinarySensor *sensor);
+  void set_uart_parent(uart::UARTComponent *uart) { this->uart_ = uart; }
 
  protected:
   uint16_t port_{9000};
@@ -75,6 +77,9 @@ class TCPServerBaseComponent : public Component {
   std::vector<TCPServerReadCallBack> on_read_callbacks_;
 
   binary_sensor::BinarySensor *count_sensor_ = nullptr;
+  uart::UARTComponent *uart_ = nullptr;
+
+  char buf_[128];
 };
 
 #ifdef USE_ESP_IDF
@@ -126,6 +131,9 @@ class TCPServerComponent : public TCPServerBaseComponent {
   void write(const char *data, size_t size, const std::string &client_id);
 
   int get_client_count() override { return this->clients_.size(); }
+
+  void disconnect();
+  void disconnect(const std::string &client_id);
 
  protected:
   void cleanup();

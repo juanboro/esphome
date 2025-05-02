@@ -16,7 +16,26 @@ namespace tcp_server {
 
 static const char *TAG = "tcpserver";
 
-void TCPServerBaseComponent::setup() { ESP_LOGCONFIG(TAG, "Setting up tcp server..."); }
+void TCPServerBaseComponent::setup() {
+  ESP_LOGCONFIG(TAG, "Setting up tcp server...");
+  if (this->uart_ != nullptr) {
+    // connect uart if requested
+    this->register_onread_callback([this](std::string client_id, std::string data) {
+      this->uart_->write_array((const uint8_t *) data.c_str(), data.size());
+    });
+  }
+}
+
+void TCPServerBaseComponent::loop() {
+  if (this->uart_ != nullptr) {
+    size_t available = this->uart_->available();
+    if (available > 0) {
+      size_t len = std::min<size_t>(available, sizeof(this->buf_));
+      this->uart_->read_array((uint8_t *) this->buf_, len);
+      this->write(this->buf_, len);
+    }
+  }
+}
 
 void TCPServerBaseComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "TCP Server:");
@@ -56,16 +75,14 @@ void TCPServerComponent::setup() {
 }
 
 void TCPServerComponent::read() {
-  char buf[128];
-
   ssize_t len;
   for (Client &client : this->clients_) {
-    while ((len = client.socket->read(&buf, sizeof(buf))) > 0) {
+    while ((len = client.socket->read(&(this->buf_), sizeof(this->buf_))) > 0) {
       for (auto *trigger : this->triggers_onmsg_) {
-        trigger->trigger(client.identifier, std::string(buf, len));
+        trigger->trigger(client.identifier, std::string(this->buf_, len));
       }
       for (auto tcpreadcb : this->on_read_callbacks_) {
-        tcpreadcb(client.identifier, std::string(buf, len));
+        tcpreadcb(client.identifier, std::string(this->buf_, len));
       }
     }
     if (len == 0) {
@@ -106,6 +123,8 @@ void TCPServerComponent::cleanup() {
 }
 
 void TCPServerComponent::loop() {
+  TCPServerBaseComponent::loop();
+
   this->accept();
   this->read();
   this->cleanup();
@@ -235,6 +254,8 @@ void TCPServerComponent::handleTimeout(AsyncClient *client, uint32_t time) {
 }
 
 void TCPServerComponent::loop() {
+  TCPServerBaseComponent::loop();
+
   if (this->count_sensor_ != nullptr) {
     this->count_sensor_->publish_state(get_client_count() > 0);
   }

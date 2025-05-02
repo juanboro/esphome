@@ -1,5 +1,6 @@
 from esphome import automation
 import esphome.codegen as cg
+from esphome.components import uart
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_ID,
@@ -16,8 +17,8 @@ DEPENDENCIES = ["network"]
 
 def AUTO_LOAD():
     if CORE.using_esp_idf:
-        return ["socket"]
-    return ["async_tcp"]
+        return ["socket", "uart"]
+    return ["async_tcp", "uart"]
 
 
 MULTI_CONF = True
@@ -64,6 +65,7 @@ CONFIG_SCHEMA = cv.Schema(
             }
         ),
         cv.Optional(CONF_PORT): cv.port,
+        cv.Optional(uart.CONF_UART_ID): cv.use_id(uart.UARTComponent),
     }
 ).extend(cv.COMPONENT_SCHEMA)
 
@@ -91,3 +93,6 @@ async def to_code(config):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
         cg.add(var.register_ondisconnect_trigger(trigger))
         await automation.build_automation(trigger, [(cg.std_string, "client_id")], conf)
+
+    if uart.CONF_UART_ID in config:
+        await uart.register_uart_device(var, config)
