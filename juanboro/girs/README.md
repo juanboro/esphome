@@ -49,6 +49,7 @@ girs:
   receiver_id: remote_receiver_id
   transmitter_id: remote_transmitter_id
   uart_id: girs_uart_id
+```
 
 ## final notes
 This is still a work in progress.  There are surely some bugs, and I still have some additional parameters to expose to the yaml.  
