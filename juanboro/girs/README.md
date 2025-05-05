@@ -5,7 +5,7 @@ GIRS Server for ESPHome
 =======================
 This provides a simple GIRS component for esphome that allows transmitting and receiving IR (or RF) remote data from/to Esphome via TCP.  I use it with [IrScrutinizer](https://www.harctoolbox.org/IrScrutinizer.html) and it should hopefully work with the linux LIRC driver as well.  It provides only minimal Girs functionality - as most of what also is in Girs already has different (usually better) ways to do it with Esphome and/or Homeassistant.
 
-TCP connectivity is provided via [this](https://github.com/juanboro/esphome/tree/mymaster/juanboro/tcp_server) compoent.  It also supports connecting via UART (serial port)
+TCP connectivity is provided via [this](https://github.com/juanboro/esphome/tree/mymaster/juanboro/tcp_server) compoent.  It also supports connecting via UART (serial port).  Component source is [here](https://github.com/juanboro/esphome/tree/mymaster/esphome/components/girs)
 
 Usage
 -----

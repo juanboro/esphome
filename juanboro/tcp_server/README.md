@@ -10,6 +10,8 @@ This component creates a TCP server listening on port 9000 (by default).  It all
 
 This component should work on ESP-32 (both platforms) and ESP8266 with IPV4.  It has not (yet) been tested with IPV6 or the RP2040/BK*/RTL* controllers.
 
+Component source is [here](https://github.com/juanboro/esphome/tree/mymaster/esphome/components/tcp_server)
+
 Usage
 -----
 
