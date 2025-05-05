@@ -35,8 +35,8 @@ remote_transmitter:
 
 You can provde either receiver_id, transmitter_id or both, or neither.
 
-Girst of using UART:
---------------------
+Gist of using UART:
+-------------------
 ```yaml
 uart:
   id: girs_uart_id
