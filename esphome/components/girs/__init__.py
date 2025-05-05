@@ -1,7 +1,12 @@
 import esphome.codegen as cg
-from esphome.components import remote_base, tcp_server
+from esphome.components import remote_base, tcp_server, uart
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
+
+
+def AUTO_LOAD():
+    return ["tcp_server", "uart"]
+
 
 girs_ns = cg.esphome_ns.namespace("girs")
 GirsComponent = girs_ns.class_(
@@ -20,6 +25,7 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(tcp_server.CONF_TCP_SERVER_ID): cv.use_id(
             tcp_server.TCPServerComponent
         ),
+        cv.Optional(uart.CONF_UART_ID): cv.use_id(uart.UARTComponent),
     }
 ).extend(cv.COMPONENT_SCHEMA)
 
@@ -41,3 +47,6 @@ async def to_code(config):
         cg.add(var.set_transmitter(transmitter_))
         cg.add(var.set_can_tx(True))
         await remote_base.register_transmittable(var, config)
+
+    if uart.CONF_UART_ID in config:
+        await uart.register_uart_device(var, config)
