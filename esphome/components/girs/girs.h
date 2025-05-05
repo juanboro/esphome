@@ -5,6 +5,7 @@
 #include "esphome/core/helpers.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/remote_base/remote_base.h"
+#include "esphome/components/uart/uart.h"
 #include "esphome/components/tcp_server/tcp_server.h"
 
 namespace esphome {
@@ -34,6 +35,7 @@ class GirsComponent : public Component, public remote_base::RemoteReceiverListen
     tcp_->register_onread_callback(
         [this](std::string client_id, std::string data) { this->tcpreadcb(client_id, data); });
   }
+  void set_uart_parent(uart::UARTComponent *uart) { this->uart_ = uart; }
 
   void set_can_rx(bool can_rx) { can_rx_ = can_rx; }
   void set_can_tx(bool can_tx) { can_tx_ = can_tx; }
@@ -57,6 +59,8 @@ class GirsComponent : public Component, public remote_base::RemoteReceiverListen
 
   uint32_t rx_start_ = 0;   // non-zero indicated millis() start of rx
   uint32_t rx_inprog_ = 0;  // non-zero indicated millis() for inprog rx between receives
+
+  uart::UARTComponent *uart_ = nullptr;
 
  private:
   size_t parseNextValue_(const std::string &input, const size_t start, uint32_t &output);

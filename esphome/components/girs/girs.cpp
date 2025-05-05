@@ -37,6 +37,16 @@ void GirsComponent::loop() {
     }
   }
 
+  // see if uart has anything for us
+  if (this->uart_ != nullptr) {
+    size_t available = this->uart_->available();
+    if (available > 0) {
+      size_t buf_pos = this->cmd_buffer_.size();
+      this->cmd_buffer_.resize(buf_pos + available);
+      this->uart_->read_array((uint8_t *) &this->cmd_buffer_[buf_pos], available);
+    }
+  }
+
   // Process any pending commands
   while ((end = this->cmd_buffer_.find_first_of(CRLF, start)) != std::string::npos) {
     this->do_command(this->cmd_buffer_.substr(start, end - start));
@@ -49,6 +59,9 @@ void GirsComponent::stream_out(const std::string &data) {
   ESP_LOGVV(TAG, "Girs stream_out (length=%d): %s", data.length(), data.c_str());
   if (tcp_ != nullptr) {
     tcp_->write(data);
+  }
+  if (uart_ != nullptr) {
+    uart_->write_array((const uint8_t *) data.data(), data.size());
   }
 }
 
