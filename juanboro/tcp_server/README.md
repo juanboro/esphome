@@ -58,6 +58,20 @@ binary_sensor:
 
 ```
 
+You can also optionally stream to/from an UART...
+```yaml
+uart:
+  id: tcp_uart_id
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 9600
+
+tcp_server:
+  - id: serialtcp
+    port: 8888
+    uart_id: tcp_uart_id
+```
+
 ## final notes
 This is heavily based on this (and everything it is based on): [esphome-stream-server-v2](https://github.com/tube0013/esphome-stream-server-v2.git).
 
