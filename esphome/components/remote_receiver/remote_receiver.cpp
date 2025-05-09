@@ -2,6 +2,9 @@
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
+#ifdef USE_ESP32
+#include <driver/gpio.h>
+#endif
 
 namespace esphome {
 namespace remote_receiver {
@@ -31,8 +34,18 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
 
 void RemoteReceiverComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up Remote Receiver...");
-  if (!this->no_init_pin_)
+  if (!this->no_init_pin_) {
     this->pin_->setup();
+#ifdef USE_ESP32
+    if (this->pin_->get_flags() & gpio::FLAG_PULLUP) {
+      ESP_LOGI(TAG, "Pullup enable");
+      gpio_pullup_en(gpio_num_t(this->pin_->get_pin()));
+    } else {
+      ESP_LOGI(TAG, "Pullup disable");
+      gpio_pullup_dis(gpio_num_t(this->pin_->get_pin()));
+    }
+#endif
+  }
   auto &s = this->store_;
   s.filter_us = this->filter_us_;
   s.pin = this->pin_->to_isr();
