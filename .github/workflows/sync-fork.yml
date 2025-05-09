@@ -38,7 +38,7 @@ jobs:
           done
 
           # octopus merge everything together - if it fails then we'll stop here
-          git checkout --track upstream/dev
+          git checkout dev
           git checkout -b devmerge
           git merge --no-edit $current_branches
 
