@@ -192,15 +192,34 @@ void APIConnection::loop() {
 
 #ifdef USE_ESP32_CAMERA
   if (this->image_reader_.available() && this->helper_->can_write_without_blocking()) {
-    uint32_t to_send = std::min((size_t) 1024, this->image_reader_.available());
-    auto buffer = this->create_buffer();
+    // Message will use 8 more bytes than the minimum size, and typical
+    // MTU is 1500. Sometimes users will see as low as 1460 MTU.
+    // If its IPv6 the header is 40 bytes, and if its IPv4
+    // the header is 20 bytes. So we have 1460 - 40 = 1420 bytes
+    // available for the payload. But we also need to add the size of
+    // the protobuf overhead, which is 8 bytes.
+    //
+    // To be safe we pick 1390 bytes as the maximum size
+    // to send in one go. This is the maximum size of a single packet
+    // that can be sent over the network.
+    // This is to avoid fragmentation of the packet.
+    uint32_t to_send = std::min((size_t) 1390, this->image_reader_.available());
+    bool done = this->image_reader_.available() == to_send;
+    uint32_t msg_size = 0;
+    ProtoSize::add_fixed_field<4>(msg_size, 1, true);
+    // partial message size calculated manually since its a special case
+    // 1 for the data field, varint for the data size, and the data itself
+    msg_size += 1 + ProtoSize::varint(to_send) + to_send;
+    ProtoSize::add_bool_field(msg_size, 1, done);
+
+    auto buffer = this->create_buffer(msg_size);
     // fixed32 key = 1;
     buffer.encode_fixed32(1, esp32_camera::global_esp32_camera->get_object_id_hash());
     // bytes data = 2;
     buffer.encode_bytes(2, this->image_reader_.peek_data_buffer(), to_send);
     // bool done = 3;
-    bool done = this->image_reader_.available() == to_send;
     buffer.encode_bool(3, done);
+
     bool success = this->send_buffer(buffer, 44);
 
     if (success) {
@@ -1774,12 +1793,25 @@ bool APIConnection::try_send_log_message(int level, const char *tag, const char 
   if (this->log_subscription_ < level)
     return false;
 
-  // Send raw so that we don't copy too much
-  auto buffer = this->create_buffer();
-  // LogLevel level = 1;
-  buffer.encode_uint32(1, static_cast<uint32_t>(level));
-  // string message = 3;
-  buffer.encode_string(3, line, strlen(line));
+  // Pre-calculate message size to avoid reallocations
+  const size_t line_length = strlen(line);
+  uint32_t msg_size = 0;
+
+  // Add size for level field (field ID 1, varint type)
+  // 1 byte for field tag + size of the level varint
+  msg_size += 1 + api::ProtoSize::varint(static_cast<uint32_t>(level));
+
+  // Add size for string field (field ID 3, string type)
+  // 1 byte for field tag + size of length varint + string length
+  msg_size += 1 + api::ProtoSize::varint(static_cast<uint32_t>(line_length)) + line_length;
+
+  // Create a pre-sized buffer
+  auto buffer = this->create_buffer(msg_size);
+
+  // Encode the message (SubscribeLogsResponse)
+  buffer.encode_uint32(1, static_cast<uint32_t>(level));  // LogLevel level = 1
+  buffer.encode_string(3, line, line_length);             // string message = 3
+
   // SubscribeLogsResponse - 29
   return this->send_buffer(buffer, 29);
 }
