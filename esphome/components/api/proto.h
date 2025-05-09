@@ -149,6 +149,18 @@ class ProtoWriteBuffer {
   void write(uint8_t value) { this->buffer_->push_back(value); }
   void encode_varint_raw(ProtoVarInt value) { value.encode(*this->buffer_); }
   void encode_varint_raw(uint32_t value) { this->encode_varint_raw(ProtoVarInt(value)); }
+  /**
+   * Encode a field key (tag/wire type combination).
+   *
+   * @param field_id Field number (tag) in the protobuf message
+   * @param type Wire type value:
+   *   - 0: Varint (int32, int64, uint32, uint64, sint32, sint64, bool, enum)
+   *   - 1: 64-bit (fixed64, sfixed64, double)
+   *   - 2: Length-delimited (string, bytes, embedded messages, packed repeated fields)
+   *   - 5: 32-bit (fixed32, sfixed32, float)
+   *
+   * Following https://protobuf.dev/programming-guides/encoding/#structure
+   */
   void encode_field_raw(uint32_t field_id, uint32_t type) {
     uint32_t val = (field_id << 3) | (type & 0b111);
     this->encode_varint_raw(val);
@@ -157,7 +169,7 @@ class ProtoWriteBuffer {
     if (len == 0 && !force)
       return;
 
-    this->encode_field_raw(field_id, 2);
+    this->encode_field_raw(field_id, 2);  // type 2: Length-delimited string
     this->encode_varint_raw(len);
     auto *data = reinterpret_cast<const uint8_t *>(string);
     this->buffer_->insert(this->buffer_->end(), data, data + len);
@@ -171,26 +183,26 @@ class ProtoWriteBuffer {
   void encode_uint32(uint32_t field_id, uint32_t value, bool force = false) {
     if (value == 0 && !force)
       return;
-    this->encode_field_raw(field_id, 0);
+    this->encode_field_raw(field_id, 0);  // type 0: Varint - uint32
     this->encode_varint_raw(value);
   }
   void encode_uint64(uint32_t field_id, uint64_t value, bool force = false) {
     if (value == 0 && !force)
       return;
-    this->encode_field_raw(field_id, 0);
+    this->encode_field_raw(field_id, 0);  // type 0: Varint - uint64
     this->encode_varint_raw(ProtoVarInt(value));
   }
   void encode_bool(uint32_t field_id, bool value, bool force = false) {
     if (!value && !force)
       return;
-    this->encode_field_raw(field_id, 0);
+    this->encode_field_raw(field_id, 0);  // type 0: Varint - bool
     this->write(0x01);
   }
   void encode_fixed32(uint32_t field_id, uint32_t value, bool force = false) {
     if (value == 0 && !force)
       return;
 
-    this->encode_field_raw(field_id, 5);
+    this->encode_field_raw(field_id, 5);  // type 5: 32-bit fixed32
     this->write((value >> 0) & 0xFF);
     this->write((value >> 8) & 0xFF);
     this->write((value >> 16) & 0xFF);
@@ -200,7 +212,7 @@ class ProtoWriteBuffer {
     if (value == 0 && !force)
       return;
 
-    this->encode_field_raw(field_id, 5);
+    this->encode_field_raw(field_id, 1);  // type 1: 64-bit fixed64
     this->write((value >> 0) & 0xFF);
     this->write((value >> 8) & 0xFF);
     this->write((value >> 16) & 0xFF);
@@ -254,7 +266,7 @@ class ProtoWriteBuffer {
     this->encode_uint64(field_id, uvalue, force);
   }
   template<class C> void encode_message(uint32_t field_id, const C &value, bool force = false) {
-    this->encode_field_raw(field_id, 2);
+    this->encode_field_raw(field_id, 2);  // type 2: Length-delimited message
     size_t begin = this->buffer_->size();
 
     value.encode(*this);
@@ -276,6 +288,7 @@ class ProtoMessage {
   virtual ~ProtoMessage() = default;
   virtual void encode(ProtoWriteBuffer buffer) const = 0;
   void decode(const uint8_t *buffer, size_t length);
+  virtual void calculate_size(uint32_t &total_size) const = 0;
 #ifdef HAS_PROTO_MESSAGE_DUMP
   std::string dump() const;
   virtual void dump_to(std::string &out) const = 0;
@@ -298,13 +311,29 @@ class ProtoService {
   virtual void on_fatal_error() = 0;
   virtual void on_unauthenticated_access() = 0;
   virtual void on_no_setup_connection() = 0;
-  virtual ProtoWriteBuffer create_buffer() = 0;
+  /**
+   * Create a buffer with a reserved size.
+   * @param reserve_size The number of bytes to pre-allocate in the buffer. This is a hint
+   *                     to optimize memory usage and avoid reallocations during encoding.
+   *                     Implementations should aim to allocate at least this size.
+   * @return A ProtoWriteBuffer object with the reserved size.
+   */
+  virtual ProtoWriteBuffer create_buffer(uint32_t reserve_size) = 0;
   virtual bool send_buffer(ProtoWriteBuffer buffer, uint32_t message_type) = 0;
   virtual bool read_message(uint32_t msg_size, uint32_t msg_type, uint8_t *msg_data) = 0;
 
+  // Optimized method that pre-allocates buffer based on message size
   template<class C> bool send_message_(const C &msg, uint32_t message_type) {
-    auto buffer = this->create_buffer();
+    uint32_t msg_size = 0;
+    msg.calculate_size(msg_size);
+
+    // Create a pre-sized buffer
+    auto buffer = this->create_buffer(msg_size);
+
+    // Encode message into the buffer
     msg.encode(buffer);
+
+    // Send the buffer
     return this->send_buffer(buffer, message_type);
   }
 };
