@@ -49,16 +49,17 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void setup() override;
   void dump_config() override;
   void loop() override;
-  float get_setup_priority() const override { return setup_priority::DATA; }
 #if ESP_IDF_VERSION_MAJOR >= 5
+  float get_setup_priority() const override { return setup_priority::DATA; }
   void set_filter_symbols(uint32_t filter_symbols) { this->filter_symbols_ = filter_symbols; }
   void set_receive_symbols(uint32_t receive_symbols) { this->receive_symbols_ = receive_symbols; }
   void set_with_dma(bool with_dma) { this->with_dma_ = with_dma; }
+#else
+  float get_setup_priority() const override { return setup_priority::DATA - 2; }
 #endif
   void set_buffer_size(uint32_t buffer_size) { this->buffer_size_ = buffer_size; }
   void set_filter_us(uint32_t filter_us) { this->filter_us_ = filter_us; }
   void set_idle_us(uint32_t idle_us) { this->idle_us_ = idle_us; }
-  void set_no_init_pin(bool no_init_pin) { this->no_init_pin_ = no_init_pin; }
 
  protected:
 #if ESP_IDF_VERSION_MAJOR >= 5
@@ -82,8 +83,6 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   uint32_t buffer_size_{};
   uint32_t filter_us_{10};
   uint32_t idle_us_{10000};
-
-  bool no_init_pin_{false};
 };
 
 }  // namespace remote_receiver_esp32
