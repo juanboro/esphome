@@ -36,11 +36,16 @@ jobs:
             git merge --no-edit origin/dev
             git push origin $branch
           done
+
+          # octopus merge everything together - if it fails then we'll stop here
+          git checkout --track upstream/dev
+          git checkout -b devmerge
+          git merge --no-edit $current_branches
+
+          # now rebase recent history (other than actions) into my master branch for a clean version of history
           git checkout mymaster
-          for branch in $current_branches dev
-          do
-            git merge --no-ff --no-commit $branch || true
-            git reset -- .github
-            git commit -m "Merge branch: $branch into mymaster" || true
-          done
+          git merge --no-ff --no-commit devmerge || true
+          git reset -- .github
+          git commit -m "Merge branch: devmerge into mymaster" || true
+          git rebase origin/mymaster
           git push origin mymaster
