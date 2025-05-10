@@ -47,5 +47,4 @@ jobs:
           git merge --no-ff --no-commit devmerge || true
           git reset -- .github
           git commit -m "Merge branch: devmerge into mymaster" || true
-          git rebase origin/mymaster
           git push origin mymaster
