@@ -38,10 +38,8 @@ void RemoteReceiverComponent::setup() {
     this->pin_->setup();
 #ifdef USE_ESP32
     if (this->pin_->get_flags() & gpio::FLAG_PULLUP) {
-      ESP_LOGI(TAG, "Pullup enable");
       gpio_pullup_en(gpio_num_t(this->pin_->get_pin()));
     } else {
-      ESP_LOGI(TAG, "Pullup disable");
       gpio_pullup_dis(gpio_num_t(this->pin_->get_pin()));
     }
 #endif

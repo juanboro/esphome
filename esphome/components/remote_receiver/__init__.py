@@ -209,5 +209,9 @@ async def to_code(config):
     cg.add(var.set_buffer_size(config[CONF_BUFFER_SIZE]))
     cg.add(var.set_filter_us(config[CONF_FILTER]))
     cg.add(var.set_idle_us(config[CONF_IDLE]))
-    if CONF_SHARE_TX in config:
+    if (
+        (CONF_SHARE_TX in config)
+        and (CONF_USE_ESP32_RMT in config)
+        and (not config[CONF_USE_ESP32_RMT])
+    ):
         cg.add(var.set_no_init_pin(config[CONF_SHARE_TX]))
