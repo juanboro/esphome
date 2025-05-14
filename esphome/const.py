@@ -1,6 +1,6 @@
 """Constants used by esphome."""
 
-__version__ = "2025.5.0-dev"
+__version__ = "2025.6.0-dev"
 
 ALLOWED_NAME_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789-_"
 VALID_SUBSTITUTIONS_CHARACTERS = (
@@ -408,6 +408,7 @@ CONF_INITIAL_OPTION = "initial_option"
 CONF_INITIAL_STATE = "initial_state"
 CONF_INITIAL_VALUE = "initial_value"
 CONF_INPUT = "input"
+CONF_INT_DATAPOINT = "int_datapoint"
 CONF_INTEGRATION_TIME = "integration_time"
 CONF_INTENSITY = "intensity"
 CONF_INTERLOCK = "interlock"
