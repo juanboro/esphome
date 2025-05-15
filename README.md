@@ -4,6 +4,7 @@ What is on my master branch here:
 - [girs](juanboro/girs) - a GIRS component.
 - udp_broadcast - a component for broadcasting messages to UDP.
 - feature branch: [esp32_soft_rmt](https://github.com/juanboro/esphome/tree/esp32_soft_rmt) - Adds software ISR remote_receive optionally for ESP32 platforms (instead of hardware RMT).
+- feature branch: [remote_sofucor_fan](https://github.com/juanboro/esphome/tree/remote_sofucor_fan) - Add's remote encode/decode of Sofucor ceiling fans.
 - bugfix branch: [fix_rc5_recv](https://github.com/juanboro/esphome/tree/fix_rc5_recv) - [PR7532](https://github.com/esphome/esphome/pull/7532) - still no response from ESPHome developers :-(
 
 Some of my other ESPHome stuff elsewhere:
