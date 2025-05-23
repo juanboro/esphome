@@ -36,29 +36,43 @@ from .types import (
 # this will be populated later, in __init__.py to avoid circular imports.
 WIDGET_TYPES: dict = {}
 
+TIME_TEXT_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_TIME_FORMAT): cv.string,
+        cv.GenerateID(CONF_TIME): cv.templatable(cv.use_id(RealTimeClock)),
+    }
+)
+
+PRINTF_TEXT_SCHEMA = cv.All(
+    cv.Schema(
+        {
+            cv.Required(CONF_FORMAT): cv.string,
+            cv.Optional(CONF_ARGS, default=list): cv.ensure_list(cv.lambda_),
+        },
+    ),
+    validate_printf,
+)
+
+
+def _validate_text(value):
+    """
+    Do some sanity checking of the format to get better error messages
+    than using cv.Any
+    """
+    if value is None:
+        raise cv.Invalid("No text specified")
+    if isinstance(value, dict):
+        if CONF_TIME_FORMAT in value:
+            return TIME_TEXT_SCHEMA(value)
+        return PRINTF_TEXT_SCHEMA(value)
+
+    return cv.templatable(cv.string)(value)
+
+
 # A schema for text properties
 TEXT_SCHEMA = cv.Schema(
     {
-        cv.Optional(CONF_TEXT): cv.Any(
-            cv.All(
-                cv.Schema(
-                    {
-                        cv.Required(CONF_FORMAT): cv.string,
-                        cv.Optional(CONF_ARGS, default=list): cv.ensure_list(
-                            cv.lambda_
-                        ),
-                    },
-                ),
-                validate_printf,
-            ),
-            cv.Schema(
-                {
-                    cv.Required(CONF_TIME_FORMAT): cv.string,
-                    cv.GenerateID(CONF_TIME): cv.templatable(cv.use_id(RealTimeClock)),
-                }
-            ),
-            cv.templatable(cv.string),
-        )
+        cv.Optional(CONF_TEXT): _validate_text,
     }
 )
 
@@ -247,11 +261,13 @@ FLAG_LIST = cv.ensure_list(df.LvConstant("LV_OBJ_FLAG_", *df.OBJ_FLAGS).one_of)
 def part_schema(parts):
     """
     Generate a schema for the various parts (e.g. main:, indicator:) of a widget type
-    :param parts:  The parts to include in the schema
+    :param parts:  The parts to include
     :return: The schema
     """
-    return cv.Schema({cv.Optional(part): STATE_SCHEMA for part in parts}).extend(
-        STATE_SCHEMA
+    return (
+        cv.Schema({cv.Optional(part): STATE_SCHEMA for part in parts})
+        .extend(STATE_SCHEMA)
+        .extend(FLAG_SCHEMA)
     )
 
 
@@ -288,22 +304,18 @@ def base_update_schema(widget_type, parts):
     :param parts:  The allowable parts to specify
     :return:
     """
-    return (
-        part_schema(parts)
-        .extend(
-            {
-                cv.Required(CONF_ID): cv.ensure_list(
-                    cv.maybe_simple_value(
-                        {
-                            cv.Required(CONF_ID): cv.use_id(widget_type),
-                        },
-                        key=CONF_ID,
-                    )
-                ),
-                cv.Optional(CONF_STATE): SET_STATE_SCHEMA,
-            }
-        )
-        .extend(FLAG_SCHEMA)
+    return part_schema(parts).extend(
+        {
+            cv.Required(CONF_ID): cv.ensure_list(
+                cv.maybe_simple_value(
+                    {
+                        cv.Required(CONF_ID): cv.use_id(widget_type),
+                    },
+                    key=CONF_ID,
+                )
+            ),
+            cv.Optional(CONF_STATE): SET_STATE_SCHEMA,
+        }
     )
 
 
@@ -321,7 +333,6 @@ def obj_schema(widget_type: WidgetType):
     """
     return (
         part_schema(widget_type.parts)
-        .extend(FLAG_SCHEMA)
         .extend(LAYOUT_SCHEMA)
         .extend(ALIGN_TO_SCHEMA)
         .extend(automation_schema(widget_type.w_type))
