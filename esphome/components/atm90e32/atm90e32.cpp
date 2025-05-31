@@ -108,7 +108,7 @@ void ATM90E32Component::update() {
 }
 
 void ATM90E32Component::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up ATM90E32 Component...");
+  ESP_LOGCONFIG(TAG, "Running setup");
   this->spi_setup();
 
   uint16_t mmode0 = 0x87;  // 3P4W 50Hz
@@ -217,7 +217,7 @@ void ATM90E32Component::dump_config() {
   ESP_LOGCONFIG("", "ATM90E32:");
   LOG_PIN("  CS Pin: ", this->cs_);
   if (this->is_failed()) {
-    ESP_LOGE(TAG, "Communication with ATM90E32 failed!");
+    ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
   }
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Voltage A", this->phase_[PHASEA].voltage_sensor_);

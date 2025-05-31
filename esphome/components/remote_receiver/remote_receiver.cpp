@@ -33,7 +33,7 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
 }
 
 void RemoteReceiverComponent::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up Remote Receiver...");
+  ESP_LOGCONFIG(TAG, "Running setup");
   if (!this->no_init_pin_) {
     this->pin_->setup();
 #ifdef USE_ESP32
