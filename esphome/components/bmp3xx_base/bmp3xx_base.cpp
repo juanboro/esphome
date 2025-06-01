@@ -70,7 +70,7 @@ static const LogString *iir_filter_to_str(IIRFilter filter) {
 
 void BMP3XXComponent::setup() {
   this->error_code_ = NONE;
-  ESP_LOGCONFIG(TAG, "Setting up BMP3XX...");
+  ESP_LOGCONFIG(TAG, "Running setup");
   // Call the Device base class "initialise" function
   if (!reset()) {
     ESP_LOGE(TAG, "Failed to reset BMP3XX...");
@@ -154,7 +154,7 @@ void BMP3XXComponent::dump_config() {
     case NONE:
       break;
     case ERROR_COMMUNICATION_FAILED:
-      ESP_LOGE(TAG, "Communication with BMP3XX failed!");
+      ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
       break;
     case ERROR_WRONG_CHIP_ID:
       ESP_LOGE(

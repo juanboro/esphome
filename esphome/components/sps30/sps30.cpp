@@ -22,7 +22,7 @@ static const size_t SERIAL_NUMBER_LENGTH = 8;
 static const uint8_t MAX_SKIPPED_DATA_CYCLES_BEFORE_ERROR = 5;
 
 void SPS30Component::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up sps30...");
+  ESP_LOGCONFIG(TAG, "Running setup");
   this->write_command(SPS30_CMD_SOFT_RESET);
   /// Deferred Sensor initialization
   this->set_timeout(500, [this]() {
@@ -73,10 +73,10 @@ void SPS30Component::dump_config() {
   if (this->is_failed()) {
     switch (this->error_code_) {
       case COMMUNICATION_FAILED:
-        ESP_LOGW(TAG, "Communication failed! Is the sensor connected?");
+        ESP_LOGW(TAG, ESP_LOG_MSG_COMM_FAIL);
         break;
       case MEASUREMENT_INIT_FAILED:
-        ESP_LOGW(TAG, "Measurement Initialization failed!");
+        ESP_LOGW(TAG, "Measurement Initialization failed");
         break;
       case SERIAL_NUMBER_REQUEST_FAILED:
         ESP_LOGW(TAG, "Unable to request sensor serial number");
@@ -91,7 +91,7 @@ void SPS30Component::dump_config() {
         ESP_LOGW(TAG, "Unable to read sensor firmware version");
         break;
       default:
-        ESP_LOGW(TAG, "Unknown setup error!");
+        ESP_LOGW(TAG, "Unknown setup error");
         break;
     }
   }
