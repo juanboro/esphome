@@ -16,7 +16,7 @@ enum ErrorCode {
 };
 
 void TEM3200Component::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up TEM3200...");
+  ESP_LOGCONFIG(TAG, "Running setup");
 
   uint8_t status(NONE);
   uint16_t raw_temperature(0);
@@ -24,7 +24,7 @@ void TEM3200Component::setup() {
 
   i2c::ErrorCode err = this->read_(status, raw_temperature, raw_pressure);
   if (err != i2c::ERROR_OK) {
-    ESP_LOGCONFIG(TAG, "    I2C Communication Failed...");
+    ESP_LOGCONFIG(TAG, ESP_LOG_MSG_COMM_FAIL);
     this->mark_failed();
     return;
   }
@@ -115,7 +115,7 @@ void TEM3200Component::update() {
   i2c::ErrorCode err = this->read_(status, raw_temperature, raw_pressure);
 
   if (err != i2c::ERROR_OK) {
-    ESP_LOGW(TAG, "I2C Communication Failed");
+    ESP_LOGW(TAG, ESP_LOG_MSG_COMM_FAIL);
     this->status_set_warning();
     return;
   }
