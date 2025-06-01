@@ -119,7 +119,7 @@ const float GRAVITY_EARTH = 9.80665f;
 void BMI160Component::internal_setup_(int stage) {
   switch (stage) {
     case 0:
-      ESP_LOGCONFIG(TAG, "Setting up BMI160...");
+      ESP_LOGCONFIG(TAG, "Running setup");
       uint8_t chipid;
       if (!this->read_byte(BMI160_REGISTER_CHIPID, &chipid) || (chipid != 0b11010001)) {
         this->mark_failed();
@@ -189,7 +189,7 @@ void BMI160Component::dump_config() {
   ESP_LOGCONFIG(TAG, "BMI160:");
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
-    ESP_LOGE(TAG, "Communication with BMI160 failed!");
+    ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
   }
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Acceleration X", this->accel_x_sensor_);
