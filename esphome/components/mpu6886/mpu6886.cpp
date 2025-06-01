@@ -26,7 +26,7 @@ const float TEMPERATURE_SENSITIVITY = 326.8;
 const float TEMPERATURE_OFFSET = 25.0;
 
 void MPU6886Component::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up MPU6886...");
+  ESP_LOGCONFIG(TAG, "Running setup");
   uint8_t who_am_i;
   if (!this->read_byte(MPU6886_REGISTER_WHO_AM_I, &who_am_i) || who_am_i != MPU6886_WHO_AM_I_IDENTIFIER) {
     this->mark_failed();
@@ -91,7 +91,7 @@ void MPU6886Component::dump_config() {
   ESP_LOGCONFIG(TAG, "MPU6886:");
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
-    ESP_LOGE(TAG, "Communication with MPU6886 failed!");
+    ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
   }
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Acceleration X", this->accel_x_sensor_);
