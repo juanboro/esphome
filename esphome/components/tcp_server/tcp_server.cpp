@@ -54,24 +54,47 @@ void TCPServerBaseComponent::set_count_sensor(binary_sensor::BinarySensor *senso
 void TCPServerComponent::setup() {
   TCPServerBaseComponent::setup();
 
-  struct sockaddr_in bind_addr = {.sin_len = sizeof(struct sockaddr_in),
-                                  .sin_family = AF_INET,
-                                  .sin_port = htons(this->port_),
-                                  .sin_addr = {
-                                      .s_addr = ESPHOME_INADDR_ANY,
-                                  }};
+  this->socket_ = socket::socket_ip_loop_monitored(SOCK_STREAM, 0);  // monitored for incoming connections
+  if (this->socket_ == nullptr) {
+    ESP_LOGW(TAG, "Could not create socket");
+    this->mark_failed();
+    return;
+  }
+  int enable = 1;
+  int err = this->socket_->setsockopt(SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+  if (err != 0) {
+    ESP_LOGW(TAG, "Socket unable to set reuseaddr: errno %d", err);
+    // we can still continue
+  }
+  err = this->socket_->setblocking(false);
+  if (err != 0) {
+    ESP_LOGW(TAG, "Socket unable to set nonblocking mode: errno %d", err);
+    this->mark_failed();
+    return;
+  }
 
-  this->socket_ = socket::socket(AF_INET, SOCK_STREAM, PF_INET);
+  struct sockaddr_storage server;
 
-  struct timeval timeout;
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 20000;  // ESPHome recommends 20-30 ms max for timeouts
+  socklen_t sl = socket::set_sockaddr_any((struct sockaddr *) &server, sizeof(server), this->port_);
+  if (sl == 0) {
+    ESP_LOGW(TAG, "Socket unable to set sockaddr: errno %d", errno);
+    this->mark_failed();
+    return;
+  }
 
-  this->socket_->setsockopt(SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout));
-  this->socket_->setsockopt(SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout));
+  err = this->socket_->bind((struct sockaddr *) &server, sl);
+  if (err != 0) {
+    ESP_LOGW(TAG, "Socket unable to bind: errno %d", errno);
+    this->mark_failed();
+    return;
+  }
 
-  this->socket_->bind(reinterpret_cast<struct sockaddr *>(&bind_addr), sizeof(struct sockaddr_in));
-  this->socket_->listen(8);
+  err = this->socket_->listen(4);
+  if (err != 0) {
+    ESP_LOGW(TAG, "Socket unable to listen: errno %d", errno);
+    this->mark_failed();
+    return;
+  }
 }
 
 void TCPServerComponent::read() {
@@ -99,20 +122,24 @@ void TCPServerComponent::read() {
 }
 
 void TCPServerComponent::accept() {
-  struct sockaddr_in client_addr;
-  socklen_t client_addrlen = sizeof(struct sockaddr_in);
-  std::unique_ptr<socket::Socket> socket =
-      this->socket_->accept(reinterpret_cast<struct sockaddr *>(&client_addr), &client_addrlen);
-  if (!socket)
-    return;
+  if (this->socket_->ready()) {
+    while (true) {
+      struct sockaddr_storage source_addr;
+      socklen_t addr_len = sizeof(source_addr);
+      auto socket = this->socket_->accept_loop_monitored((struct sockaddr *) &source_addr, &addr_len);
+      if (!socket)
+        break;
 
-  socket->setblocking(false);
-  std::string identifier = socket->getpeername();
-  this->clients_.emplace_back(std::move(socket), identifier);
-  ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
+      socket->setblocking(false);
 
-  for (auto *trigger : this->triggers_on_connect_) {
-    trigger->trigger(identifier);
+      std::string identifier = socket->getpeername();
+      this->clients_.emplace_back(std::move(socket), identifier);
+      ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
+
+      for (auto *trigger : this->triggers_on_connect_) {
+        trigger->trigger(identifier);
+      }
+    }
   }
 }
 
