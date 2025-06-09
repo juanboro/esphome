@@ -30,15 +30,15 @@ tcp_server_ns = cg.esphome_ns.namespace("tcp_server")
 TCPServerComponent = tcp_server_ns.class_("TCPServerComponent", cg.Component)
 TCPServerTrigger = tcp_server_ns.class_(
     "TCPServerTrigger",
-    automation.Trigger.template(cg.std_string, cg.std_string),
+    automation.Trigger.template(cg.const_char_ptr, cg.size_t, cg.const_char_ptr),
 )
 TCPServerOnConnectTrigger = tcp_server_ns.class_(
     "TCPServerOnConnectTrigger",
-    automation.Trigger.template(cg.std_string),
+    automation.Trigger.template(cg.const_char_ptr),
 )
 TCPServerOnDisconnectTrigger = tcp_server_ns.class_(
     "TCPServerOnDisconnectTrigger",
-    automation.Trigger.template(cg.std_string),
+    automation.Trigger.template(cg.const_char_ptr),
 )
 
 
@@ -81,18 +81,28 @@ async def to_code(config):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
         cg.add(var.register_onmessage_trigger(trigger))
         await automation.build_automation(
-            trigger, [(cg.std_string, "client_id"), (cg.std_string, "msg")], conf
+            trigger,
+            [
+                (cg.const_char_ptr, "client_id"),
+                (cg.const_char_ptr, "msg"),
+                (cg.size_t, "len"),
+            ],
+            conf,
         )
 
     for conf in config.get(CONF_ON_CONNECT, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
         cg.add(var.register_onconnect_trigger(trigger))
-        await automation.build_automation(trigger, [(cg.std_string, "client_id")], conf)
+        await automation.build_automation(
+            trigger, [(cg.const_char_ptr, "client_id")], conf
+        )
 
     for conf in config.get(CONF_ON_DISCONNECT, []):
         trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
         cg.add(var.register_ondisconnect_trigger(trigger))
-        await automation.build_automation(trigger, [(cg.std_string, "client_id")], conf)
+        await automation.build_automation(
+            trigger, [(cg.const_char_ptr, "client_id")], conf
+        )
 
     if uart.CONF_UART_ID in config:
         await uart.register_uart_device(var, config)

@@ -29,13 +29,11 @@ GPL-V3 and: https://github.com/tube0013/esphome-stream-server-v2
 namespace esphome {
 namespace tcp_server {
 
-class TCPServerTrigger : public Trigger<std::string, std::string> {};
-class TCPServerOnConnectTrigger : public Trigger<std::string> {};
-class TCPServerOnDisconnectTrigger : public Trigger<std::string> {};
+class TCPServerTrigger : public Trigger<const char *, const char *, size_t> {};
+class TCPServerOnConnectTrigger : public Trigger<const char *> {};
+class TCPServerOnDisconnectTrigger : public Trigger<const char *> {};
 // mechanism for receiving messages directly to components...
-// yeah - this isn't quite the esphome way of doing this through python cv/cg, but I haven't quite figured that out...
-// there are hints in climate_ir ...
-using TCPServerReadCallBack = std::function<void(std::string, std::string)>;
+using TCPServerReadCallBack = std::function<void(const char *, const char *, size_t)>;
 
 class TCPServerBaseComponent : public Component {
  public:
@@ -49,12 +47,12 @@ class TCPServerBaseComponent : public Component {
   float get_setup_priority() const override { return esphome::setup_priority::AFTER_WIFI; }
 
   virtual void write(const std::string &data) {}
-  virtual void write(const std::string &data, const std::string &client_id) {}
+  virtual void write(const std::string &data, const char *client_id) {}
   virtual void write(const char *data, size_t size) {}
-  virtual void write(const char *data, size_t size, const std::string &client_id) {}
+  virtual void write(const char *data, size_t size, const char *client_id) {}
 
   virtual void disconnect() {}
-  virtual void disconnect(const std::string &client_id) {}
+  virtual void disconnect(const char *client_id) {}
 
   void register_onmessage_trigger(TCPServerTrigger *trig) { this->triggers_onmsg_.push_back(trig); }
   void register_onconnect_trigger(TCPServerOnConnectTrigger *trig) { this->triggers_on_connect_.push_back(trig); }
@@ -92,12 +90,12 @@ class TCPServerComponent : public TCPServerBaseComponent {
   void on_shutdown() override;
 
   void write(const std::string &data);
-  void write(const std::string &data, const std::string &client_id);
+  void write(const std::string &data, const char *client_id);
   void write(const char *data, size_t size);
-  void write(const char *data, size_t size, const std::string &client_id);
+  void write(const char *data, size_t size, const char *client_id);
 
   void disconnect();
-  void disconnect(const std::string &client_id);
+  void disconnect(const char *client_id);
 
   int get_client_count() override { return this->clients_.size(); }
 
@@ -126,14 +124,14 @@ class TCPServerComponent : public TCPServerBaseComponent {
   void on_shutdown() override;
 
   void write(const std::string &data);
-  void write(const std::string &data, const std::string &client_id);
+  void write(const std::string &data, const char *client_id);
   void write(const char *data, size_t size);
-  void write(const char *data, size_t size, const std::string &client_id);
+  void write(const char *data, size_t size, const char *client_id);
 
   int get_client_count() override { return this->clients_.size(); }
 
   void disconnect();
-  void disconnect(const std::string &client_id);
+  void disconnect(const char *client_id);
 
  protected:
   void cleanup();

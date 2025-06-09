@@ -32,8 +32,9 @@ class GirsComponent : public Component, public remote_base::RemoteReceiverListen
 
   void set_tcp_server(tcp_server::TCPServerComponent *tcp) {
     tcp_ = tcp;
-    tcp_->register_onread_callback(
-        [this](std::string client_id, std::string data) { this->tcpreadcb(client_id, data); });
+    tcp_->register_onread_callback([this](const char *client_id, const char *data, size_t len) {
+      this->tcpreadcb(client_id, std::string(data, len));
+    });
   }
   void set_uart_parent(uart::UARTComponent *uart) { this->uart_ = uart; }
 

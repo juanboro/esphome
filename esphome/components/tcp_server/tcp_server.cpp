@@ -20,8 +20,8 @@ void TCPServerBaseComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up tcp server...");
   if (this->uart_ != nullptr) {
     // connect uart if requested
-    this->register_onread_callback([this](std::string client_id, std::string data) {
-      this->uart_->write_array((const uint8_t *) data.c_str(), data.size());
+    this->register_onread_callback([this](const char *client_id, const char *data, size_t len) {
+      this->uart_->write_array((const uint8_t *) data, len);
     });
   }
 }
@@ -102,10 +102,10 @@ void TCPServerComponent::read() {
   for (Client &client : this->clients_) {
     while ((len = client.socket->read(&(this->buf_), sizeof(this->buf_))) > 0) {
       for (auto *trigger : this->triggers_onmsg_) {
-        trigger->trigger(client.identifier, std::string(this->buf_, len));
+        trigger->trigger(client.identifier.c_str(), this->buf_, len);
       }
       for (auto tcpreadcb : this->on_read_callbacks_) {
-        tcpreadcb(client.identifier, std::string(this->buf_, len));
+        tcpreadcb(client.identifier.c_str(), this->buf_, len);
       }
     }
     if (len == 0) {
@@ -113,7 +113,7 @@ void TCPServerComponent::read() {
       client.disconnected = true;
 
       for (auto *trigger : this->triggers_on_disconnect_) {
-        trigger->trigger(client.identifier);
+        trigger->trigger(client.identifier.c_str());
       }
 
       continue;
@@ -137,7 +137,7 @@ void TCPServerComponent::accept() {
       ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
 
       for (auto *trigger : this->triggers_on_connect_) {
-        trigger->trigger(identifier);
+        trigger->trigger(identifier.c_str());
       }
     }
   }
@@ -177,14 +177,14 @@ void TCPServerComponent::write(const char *data, size_t size) {
   }
 }
 
-void TCPServerComponent::write(const std::string &data, const std::string &client_id) {
+void TCPServerComponent::write(const std::string &data, const char *client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
     client.socket->write(data.c_str(), data.size());
   }
 }
-void TCPServerComponent::write(const char *data, size_t size, const std::string &client_id) {
+void TCPServerComponent::write(const char *data, size_t size, const char *client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
@@ -192,7 +192,7 @@ void TCPServerComponent::write(const char *data, size_t size, const std::string 
   }
 }
 
-void TCPServerComponent::disconnect(const std::string &client_id) {
+void TCPServerComponent::disconnect(const char *client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
@@ -228,8 +228,8 @@ void TCPServerComponent::setup() {
 }
 
 void TCPServerComponent::handleNewClient(AsyncClient *client) {
-  std::string identifier = std::string(client->remoteIP().toString().c_str());
-  ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
+  const char *identifier = client->remoteIP().toString().c_str();
+  ESP_LOGD(TAG, "New client connected from %s", identifier);
 
   this->clients_.emplace_back(client, identifier);
 
@@ -245,14 +245,13 @@ void TCPServerComponent::handleNewClient(AsyncClient *client) {
 }
 
 void TCPServerComponent::handleData(AsyncClient *client, void *data, size_t len) {
-  std::string received_data(static_cast<char *>(data), len);
-  std::string identifier = std::string(client->remoteIP().toString().c_str());
-  ESP_LOGD(TAG, "Received data from client %s: %s", identifier.c_str(), received_data.c_str());
+  const char *identifier = client->remoteIP().toString().c_str();
+  ESP_LOGD(TAG, "Received data from client %s of len %d", identifier, len);
   for (auto *trigger : this->triggers_onmsg_) {
-    trigger->trigger(identifier, received_data);
+    trigger->trigger(identifier, (const char *) data, len);
   }
   for (auto tcpreadcb : this->on_read_callbacks_) {
-    tcpreadcb(identifier, received_data);
+    tcpreadcb(identifier, (const char *) data, len);
   }
 }
 
@@ -268,7 +267,7 @@ void TCPServerComponent::handleDisconnect(AsyncClient *client) {
     it->disconnected = true;
     ESP_LOGD(TAG, "Client %s disconnected", it->identifier.c_str());
     for (auto *trigger : this->triggers_on_disconnect_) {
-      trigger->trigger(it->identifier);
+      trigger->trigger(it->identifier.c_str());
     }
   }
 
@@ -306,7 +305,7 @@ void TCPServerComponent::write(const char *data, size_t size) {
   }
 }
 
-void TCPServerComponent::write(const std::string &data, const std::string &client_id) {
+void TCPServerComponent::write(const std::string &data, const char *client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
@@ -314,7 +313,7 @@ void TCPServerComponent::write(const std::string &data, const std::string &clien
   }
 }
 
-void TCPServerComponent::write(const char *data, size_t size, const std::string &client_id) {
+void TCPServerComponent::write(const char *data, size_t size, const char *client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
@@ -322,7 +321,7 @@ void TCPServerComponent::write(const char *data, size_t size, const std::string 
   }
 }
 
-void TCPServerComponent::disconnect(const std::string &client_id) {
+void TCPServerComponent::disconnect(const char *client_id) {
   for (Client &client : this->clients_) {
     if ((client.disconnected) || (client.identifier.compare(client_id) != 0))
       continue;
