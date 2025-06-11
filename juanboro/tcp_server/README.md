@@ -23,7 +23,7 @@ external_components:
 tcp_server:
 ```
 
-It's not that interesting unless you at least define one or more of the automations: on_connect, on_message, or on_disconnect.  Each automation provides a "client_id" string (the address of the connecting cient).  The on_message automation also provides a "msg" string with messages received from the client.
+It's not that interesting unless you at least define one or more of the automations: on_connect, on_message, or on_disconnect.  Each automation provides a "client_id" c-string (the address of the connecting cient).  The on_message automation also provides a "msg" char array of "len" with messages received from the client.
 
 Example echo server:
 ```yaml
@@ -31,19 +31,24 @@ tcp_server:
   - id: echotcp
     port: 9000
 
-    on_message: 
+    on_message:
+      # on_msg automation provides:
+      #   const char* msg, // the received data
+      #   size_t len, // length of received data
+      #   const char* client_id // c str client identifier
       then:
         - lambda: |-
-            id(echotcp).write(msg,client_id);  
+            id(echotcp).write(msg,len,client_id);  
 
             // you can broadcast to all connected clients like this:
-            //id(echotcp).write(msg);  
-
+            //id(echotcp).write(msg,len);
     on_connect:
+      # on_connect automation provides:
+      #   const char* client_id // c str client identifier
       then:
         - logger.log:
             format: "TCP Echo Now Connected to %s"
-            args: ['client_id.c_str()']
+            args: ['client_id']
             level: INFO
 ```
 
