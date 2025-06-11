@@ -75,8 +75,16 @@ tcp_server:
     uart_id: tcp_uart_id
 ```
 
-## errata
-This does not work correctly when using TCP logging on the ESP32 ESP-IDF platform.
+## ESP32 ESP-IDF platform
+By default the maximum number of socket connections is pretty small when using the ESP-IDF platform.  Consider increasing the number based on your needs using something like this:
+```yaml
+esp32:  
+  board: esp32dev
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_LWIP_MAX_SOCKETS: "16"
+```
 
 ## final notes
 This is heavily based on this (and everything it is based on): [esphome-stream-server-v2](https://github.com/tube0013/esphome-stream-server-v2.git).
