@@ -100,6 +100,8 @@ void TCPServerComponent::setup() {
 void TCPServerComponent::read() {
   ssize_t len;
   for (Client &client : this->clients_) {
+    if (!client.socket->ready())
+      continue;
     while ((len = client.socket->read(&(this->buf_), sizeof(this->buf_))) > 0) {
       for (auto *trigger : this->triggers_onmsg_) {
         trigger->trigger(client.identifier.c_str(), this->buf_, len);
@@ -122,7 +124,7 @@ void TCPServerComponent::read() {
 }
 
 void TCPServerComponent::accept() {
-  if (this->socket_->ready()) {
+  if (this->socket_ && this->socket_->ready()) {
     while (true) {
       struct sockaddr_storage source_addr;
       socklen_t addr_len = sizeof(source_addr);
@@ -132,7 +134,7 @@ void TCPServerComponent::accept() {
 
       socket->setblocking(false);
 
-      std::string identifier = socket->getpeername();
+      std::string identifier = str_sprintf("%s:%d", socket->getpeername().c_str(), socket->get_fd());
       this->clients_.emplace_back(std::move(socket), identifier);
       ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
 
@@ -228,8 +230,8 @@ void TCPServerComponent::setup() {
 }
 
 void TCPServerComponent::handleNewClient(AsyncClient *client) {
-  const char *identifier = client->remoteIP().toString().c_str();
-  ESP_LOGD(TAG, "New client connected from %s", identifier);
+  std::string identifier = str_sprintf("%s:%d", client->remoteIP().toString().c_str(), client->remotePort());
+  ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
 
   this->clients_.emplace_back(client, identifier);
 
@@ -240,23 +242,24 @@ void TCPServerComponent::handleNewClient(AsyncClient *client) {
   client->onTimeout([this](void *arg, AsyncClient *client, uint32_t time) { this->handleTimeout(client, time); });
 
   for (auto *trigger : this->triggers_on_connect_) {
-    trigger->trigger(identifier);
+    trigger->trigger(identifier.c_str());
   }
 }
 
 void TCPServerComponent::handleData(AsyncClient *client, void *data, size_t len) {
-  const char *identifier = client->remoteIP().toString().c_str();
-  ESP_LOGD(TAG, "Received data from client %s of len %d", identifier, len);
+  std::string identifier = str_sprintf("%s:%d", client->remoteIP().toString().c_str(), client->remotePort());
+  ESP_LOGD(TAG, "Received data from client %s of len %d", identifier.c_str(), len);
   for (auto *trigger : this->triggers_onmsg_) {
-    trigger->trigger(identifier, (const char *) data, len);
+    trigger->trigger(identifier.c_str(), (const char *) data, len);
   }
   for (auto tcpreadcb : this->on_read_callbacks_) {
-    tcpreadcb(identifier, (const char *) data, len);
+    tcpreadcb(identifier.c_str(), (const char *) data, len);
   }
 }
 
 void TCPServerComponent::handleError(AsyncClient *client, int8_t error) {
-  ESP_LOGW(TAG, "Client %s encountered error: %d", client->remoteIP().toString().c_str(), error);
+  std::string identifier = str_sprintf("%s:%d", client->remoteIP().toString().c_str(), client->remotePort());
+  ESP_LOGW(TAG, "Client %s encountered error: %d", identifier.c_str(), error);
   client->close();
 }
 

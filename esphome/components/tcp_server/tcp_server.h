@@ -112,7 +112,7 @@ class TCPServerComponent : public TCPServerBaseComponent {
   };
 
   std::vector<Client> clients_{};
-  std::unique_ptr<esphome::socket::Socket> socket_{};
+  std::unique_ptr<esphome::socket::Socket> socket_{nullptr};
 };
 #else
 class TCPServerComponent : public TCPServerBaseComponent {
