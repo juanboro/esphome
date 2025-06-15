@@ -87,8 +87,8 @@ static const uint32_t TEARDOWN_TIMEOUT_REBOOT_MS = 1000;  // 1 second for quick 
 
 class Application {
  public:
-  void pre_setup(const std::string &name, const std::string &friendly_name, const std::string &area,
-                 const char *comment, const char *compilation_time, bool name_add_mac_suffix) {
+  void pre_setup(const std::string &name, const std::string &friendly_name, const char *area, const char *comment,
+                 const char *compilation_time, bool name_add_mac_suffix) {
     arch_init();
     this->name_add_mac_suffix_ = name_add_mac_suffix;
     if (name_add_mac_suffix) {
@@ -285,7 +285,7 @@ class Application {
   const std::string &get_friendly_name() const { return this->friendly_name_; }
 
   /// Get the area of this Application set by pre_setup().
-  const std::string &get_area() const { return this->area_; }
+  std::string get_area() const { return this->area_ == nullptr ? "" : this->area_; }
 
   /// Get the comment of this Application set by pre_setup().
   std::string get_comment() const { return this->comment_; }
@@ -332,7 +332,7 @@ class Application {
    */
   void teardown_components(uint32_t timeout_ms);
 
-  uint32_t get_app_state() const { return this->app_state_; }
+  uint8_t get_app_state() const { return this->app_state_; }
 
 #ifdef USE_BINARY_SENSOR
   const std::vector<binary_sensor::BinarySensor *> &get_binary_sensors() { return this->binary_sensors_; }
@@ -646,14 +646,14 @@ class Application {
 
   std::string name_;
   std::string friendly_name_;
-  std::string area_;
+  const char *area_{nullptr};
   const char *comment_{nullptr};
   const char *compilation_time_{nullptr};
   bool name_add_mac_suffix_;
   uint32_t last_loop_{0};
   uint32_t loop_interval_{16};
   size_t dump_config_at_{SIZE_MAX};
-  uint32_t app_state_{0};
+  uint8_t app_state_{0};
   Component *current_component_{nullptr};
   uint32_t loop_component_start_time_{0};
 
