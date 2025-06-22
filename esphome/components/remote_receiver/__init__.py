@@ -148,10 +148,6 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
                 cv.only_on_esp32,
                 cv.boolean,
             ),
-            cv.Optional(CONF_SHARE_TX): cv.All(
-                cv.only_on_esp32,
-                cv.boolean,
-            ),
         }
     ).extend(cv.COMPONENT_SCHEMA)
 )
