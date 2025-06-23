@@ -12,6 +12,7 @@
 #include "esphome/core/helpers.h"
 
 #include "ble_event.h"
+#include "ble_event_pool.h"
 #include "queue.h"
 
 #ifdef USE_ESP32
@@ -29,6 +30,9 @@ static constexpr uint8_t SCAN_RESULT_BUFFER_SIZE = 32;
 #else
 static constexpr uint8_t SCAN_RESULT_BUFFER_SIZE = 20;
 #endif
+
+// Maximum size of the BLE event queue - must be power of 2 for lock-free queue
+static constexpr size_t MAX_BLE_QUEUE_SIZE = 64;
 
 uint64_t ble_addr_to_uint64(const esp_bd_addr_t address);
 
@@ -144,7 +148,8 @@ class ESP32BLE : public Component {
   std::vector<BLEStatusEventHandler *> ble_status_event_handlers_;
   BLEComponentState state_{BLE_COMPONENT_STATE_OFF};
 
-  Queue<BLEEvent> ble_events_;
+  LockFreeQueue<BLEEvent, MAX_BLE_QUEUE_SIZE> ble_events_;
+  BLEEventPool<MAX_BLE_QUEUE_SIZE> ble_event_pool_;
   BLEAdvertising *advertising_{};
   esp_ble_io_cap_t io_cap_{ESP_IO_CAP_NONE};
   uint32_t advertising_cycle_time_{};
