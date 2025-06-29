@@ -159,7 +159,7 @@ async def to_code(config):
         CONF_USE_ESP32_RMT not in config or config[CONF_USE_ESP32_RMT]
     ):
         config[CONF_ESP32_ID].id = config[CONF_ID].id
-        var = cg.new_Pvariable(config[CONF_ID], pin)
+        var = cg.new_Pvariable(config[CONF_ESP32_ID], pin)
         cg.add(var.set_rmt_symbols(config[CONF_RMT_SYMBOLS]))
         cg.add(var.set_receive_symbols(config[CONF_RECEIVE_SYMBOLS]))
         if CONF_USE_DMA in config:
