@@ -3,6 +3,7 @@
 #include "esphome/core/version.h"
 #include "esphome/core/hal.h"
 #include <algorithm>
+#include <ranges>
 
 #ifdef USE_STATUS_LED
 #include "esphome/components/status_led/status_led.h"
@@ -184,8 +185,8 @@ void IRAM_ATTR HOT Application::feed_wdt(uint32_t time) {
 }
 void Application::reboot() {
   ESP_LOGI(TAG, "Forcing a reboot");
-  for (auto it = this->components_.rbegin(); it != this->components_.rend(); ++it) {
-    (*it)->on_shutdown();
+  for (auto &component : std::ranges::reverse_view(this->components_)) {
+    component->on_shutdown();
   }
   arch_restart();
 }
@@ -198,17 +199,17 @@ void Application::safe_reboot() {
 }
 
 void Application::run_safe_shutdown_hooks() {
-  for (auto it = this->components_.rbegin(); it != this->components_.rend(); ++it) {
-    (*it)->on_safe_shutdown();
+  for (auto &component : std::ranges::reverse_view(this->components_)) {
+    component->on_safe_shutdown();
   }
-  for (auto it = this->components_.rbegin(); it != this->components_.rend(); ++it) {
-    (*it)->on_shutdown();
+  for (auto &component : std::ranges::reverse_view(this->components_)) {
+    component->on_shutdown();
   }
 }
 
 void Application::run_powerdown_hooks() {
-  for (auto it = this->components_.rbegin(); it != this->components_.rend(); ++it) {
-    (*it)->on_powerdown();
+  for (auto &component : std::ranges::reverse_view(this->components_)) {
+    component->on_powerdown();
   }
 }
 
@@ -257,6 +258,17 @@ void Application::teardown_components(uint32_t timeout_ms) {
 }
 
 void Application::calculate_looping_components_() {
+  // Count total components that need looping
+  size_t total_looping = 0;
+  for (auto *obj : this->components_) {
+    if (obj->has_overridden_loop()) {
+      total_looping++;
+    }
+  }
+
+  // Pre-reserve vector to avoid reallocations
+  this->looping_components_.reserve(total_looping);
+
   // First add all active components
   for (auto *obj : this->components_) {
     if (obj->has_overridden_loop() &&
