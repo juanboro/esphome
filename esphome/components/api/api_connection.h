@@ -185,7 +185,6 @@ class APIConnection : public APIServerConnection {
   void on_disconnect_response(const DisconnectResponse &value) override;
   void on_ping_response(const PingResponse &value) override {
     // we initiated ping
-    this->ping_retries_ = 0;
     this->sent_ping_ = false;
   }
   void on_home_assistant_state_response(const HomeAssistantStateResponse &msg) override;
@@ -301,6 +300,9 @@ class APIConnection : public APIServerConnection {
     response.icon = entity->get_icon();
     response.disabled_by_default = entity->is_disabled_by_default();
     response.entity_category = static_cast<enums::EntityCategory>(entity->get_entity_category());
+#ifdef USE_DEVICES
+    response.device_id = entity->get_device_id();
+#endif
   }
 
   // Helper function to fill common entity state fields
@@ -438,13 +440,16 @@ class APIConnection : public APIServerConnection {
   // Helper function to get estimated message size for buffer pre-allocation
   static uint16_t get_estimated_message_size(uint16_t message_type);
 
+  // Batch message method for ping requests
+  static uint16_t try_send_ping_request(EntityBase *entity, APIConnection *conn, uint32_t remaining_size,
+                                        bool is_single);
+
   // Pointers first (4 bytes each, naturally aligned)
   std::unique_ptr<APIFrameHelper> helper_;
   APIServer *parent_;
 
   // 4-byte aligned types
   uint32_t last_traffic_;
-  uint32_t next_ping_retry_{0};
   int state_subs_at_ = -1;
 
   // Strings (12 bytes each on 32-bit)
@@ -467,6 +472,11 @@ class APIConnection : public APIServerConnection {
   bool sent_ping_{false};
   bool service_call_subscription_{false};
   bool next_close_ = false;
+  // 7 bytes used, 1 byte padding
+#ifdef HAS_PROTO_MESSAGE_DUMP
+  // When true, encode_message_to_buffer will only log, not encode
+  bool log_only_mode_{false};
+#endif
   uint8_t ping_retries_{0};
   // 8 bytes used, no padding needed
 
@@ -480,55 +490,57 @@ class APIConnection : public APIServerConnection {
   // Function pointer type for message encoding
   using MessageCreatorPtr = uint16_t (*)(EntityBase *, APIConnection *, uint32_t remaining_size, bool is_single);
 
-  // Optimized MessageCreator class using union dispatch
+  // Optimized MessageCreator class using tagged pointer
   class MessageCreator {
+    // Ensure pointer alignment allows LSB tagging
+    static_assert(alignof(std::string *) > 1, "String pointer alignment must be > 1 for LSB tagging");
+
    public:
-    // Constructor for function pointer (message_type = 0)
-    MessageCreator(MessageCreatorPtr ptr) : message_type_(0) { data_.ptr = ptr; }
+    // Constructor for function pointer
+    MessageCreator(MessageCreatorPtr ptr) {
+      // Function pointers are always aligned, so LSB is 0
+      data_.ptr = ptr;
+    }
 
     // Constructor for string state capture
-    MessageCreator(const std::string &value, uint16_t msg_type) : message_type_(msg_type) {
-      data_.string_ptr = new std::string(value);
+    explicit MessageCreator(const std::string &str_value) {
+      // Allocate string and tag the pointer
+      auto *str = new std::string(str_value);
+      // Set LSB to 1 to indicate string pointer
+      data_.tagged = reinterpret_cast<uintptr_t>(str) | 1;
     }
 
     // Destructor
     ~MessageCreator() {
-      // Clean up string data for string-based message types
-      if (uses_string_data_()) {
-        delete data_.string_ptr;
+      if (has_tagged_string_ptr_()) {
+        delete get_string_ptr_();
       }
     }
 
     // Copy constructor
-    MessageCreator(const MessageCreator &other) : message_type_(other.message_type_) {
-      if (message_type_ == 0) {
-        data_.ptr = other.data_.ptr;
-      } else if (uses_string_data_()) {
-        data_.string_ptr = new std::string(*other.data_.string_ptr);
+    MessageCreator(const MessageCreator &other) {
+      if (other.has_tagged_string_ptr_()) {
+        auto *str = new std::string(*other.get_string_ptr_());
+        data_.tagged = reinterpret_cast<uintptr_t>(str) | 1;
       } else {
-        data_ = other.data_;  // For POD types
+        data_ = other.data_;
       }
     }
 
     // Move constructor
-    MessageCreator(MessageCreator &&other) noexcept : data_(other.data_), message_type_(other.message_type_) {
-      other.message_type_ = 0;  // Reset other to function pointer type
-      other.data_.ptr = nullptr;
-    }
+    MessageCreator(MessageCreator &&other) noexcept : data_(other.data_) { other.data_.ptr = nullptr; }
 
     // Assignment operators (needed for batch deduplication)
     MessageCreator &operator=(const MessageCreator &other) {
       if (this != &other) {
         // Clean up current string data if needed
-        if (uses_string_data_()) {
-          delete data_.string_ptr;
+        if (has_tagged_string_ptr_()) {
+          delete get_string_ptr_();
         }
         // Copy new data
-        message_type_ = other.message_type_;
-        if (other.message_type_ == 0) {
-          data_.ptr = other.data_.ptr;
-        } else if (other.uses_string_data_()) {
-          data_.string_ptr = new std::string(*other.data_.string_ptr);
+        if (other.has_tagged_string_ptr_()) {
+          auto *str = new std::string(*other.get_string_ptr_());
+          data_.tagged = reinterpret_cast<uintptr_t>(str) | 1;
         } else {
           data_ = other.data_;
         }
@@ -539,30 +551,35 @@ class APIConnection : public APIServerConnection {
     MessageCreator &operator=(MessageCreator &&other) noexcept {
       if (this != &other) {
         // Clean up current string data if needed
-        if (uses_string_data_()) {
-          delete data_.string_ptr;
+        if (has_tagged_string_ptr_()) {
+          delete get_string_ptr_();
         }
         // Move data
-        message_type_ = other.message_type_;
         data_ = other.data_;
         // Reset other to safe state
-        other.message_type_ = 0;
         other.data_.ptr = nullptr;
       }
       return *this;
     }
 
-    // Call operator
-    uint16_t operator()(EntityBase *entity, APIConnection *conn, uint32_t remaining_size, bool is_single) const;
+    // Call operator - now accepts message_type as parameter
+    uint16_t operator()(EntityBase *entity, APIConnection *conn, uint32_t remaining_size, bool is_single,
+                        uint16_t message_type) const;
 
    private:
-    // Helper to check if this message type uses heap-allocated strings
-    bool uses_string_data_() const { return message_type_ == EventResponse::MESSAGE_TYPE; }
-    union CreatorData {
-      MessageCreatorPtr ptr;    // 8 bytes
-      std::string *string_ptr;  // 8 bytes
-    } data_;                    // 8 bytes
-    uint16_t message_type_;     // 2 bytes (0 = function ptr, >0 = state capture)
+    // Check if this contains a string pointer
+    bool has_tagged_string_ptr_() const { return (data_.tagged & 1) != 0; }
+
+    // Get the actual string pointer (clears the tag bit)
+    std::string *get_string_ptr_() const {
+      // NOLINTNEXTLINE(performance-no-int-to-ptr)
+      return reinterpret_cast<std::string *>(data_.tagged & ~uintptr_t(1));
+    }
+
+    union {
+      MessageCreatorPtr ptr;
+      uintptr_t tagged;
+    } data_;  // 4 bytes on 32-bit
   };
 
   // Generic batching mechanism for both state updates and entity info
@@ -588,6 +605,8 @@ class APIConnection : public APIServerConnection {
 
     // Add item to the batch
     void add_item(EntityBase *entity, MessageCreator creator, uint16_t message_type);
+    // Add item to the front of the batch (for high priority messages like ping)
+    void add_item_front(EntityBase *entity, MessageCreator creator, uint16_t message_type);
     void clear() {
       items.clear();
       batch_scheduled = false;
@@ -617,6 +636,10 @@ class APIConnection : public APIServerConnection {
   // State for batch buffer allocation
   bool batch_first_message_{false};
 
+#ifdef HAS_PROTO_MESSAGE_DUMP
+  void log_batch_item_(const DeferredBatch::BatchItem &item);
+#endif
+
   // Helper function to schedule a deferred message with known message type
   bool schedule_message_(EntityBase *entity, MessageCreator creator, uint16_t message_type) {
     this->deferred_batch_.add_item(entity, std::move(creator), message_type);
@@ -626,6 +649,12 @@ class APIConnection : public APIServerConnection {
   // Overload for function pointers (for info messages and current state reads)
   bool schedule_message_(EntityBase *entity, MessageCreatorPtr function_ptr, uint16_t message_type) {
     return schedule_message_(entity, MessageCreator(function_ptr), message_type);
+  }
+
+  // Helper function to schedule a high priority message at the front of the batch
+  bool schedule_message_front_(EntityBase *entity, MessageCreatorPtr function_ptr, uint16_t message_type) {
+    this->deferred_batch_.add_item_front(entity, MessageCreator(function_ptr), message_type);
+    return this->schedule_batch_();
   }
 };
 
