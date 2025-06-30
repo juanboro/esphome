@@ -92,7 +92,7 @@ esp32:
 ```
 
 ## final notes
-This is heavily based on this (and everything it is based on): [esphome-stream-server-v2](https://github.com/tube0013/esphome-stream-server-v2.git).
+This is heavily based on this (and everything it is based on): [esphome-stream-server-v2](https://github.com/tube0013/esphome-stream-server-v2.git).  This component works quite well for me with [genmon](https://github.com/jgyates/genmon) similar to the setup done [here](https://github.com/gregmac/Genmon-ESP32-Serial-Bridge) - except I built my serial bridge using a ESP8266 instead of an ESP32.
 
 ESPHome Mysteries
 -----------------
