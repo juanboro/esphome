@@ -2,8 +2,9 @@
 // See script/api_protobuf/api_protobuf.py
 #pragma once
 
-#include "api_pb2.h"
 #include "esphome/core/defines.h"
+
+#include "api_pb2.h"
 
 namespace esphome {
 namespace api {
@@ -199,7 +200,7 @@ class APIServerConnectionBase : public ProtoService {
   virtual void on_update_command_request(const UpdateCommandRequest &value){};
 #endif
  protected:
-  bool read_message(uint32_t msg_size, uint32_t msg_type, uint8_t *msg_data) override;
+  void read_message(uint32_t msg_size, uint32_t msg_type, uint8_t *msg_data) override;
 };
 
 class APIServerConnection : public APIServerConnectionBase {
