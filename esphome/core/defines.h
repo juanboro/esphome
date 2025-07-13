@@ -23,6 +23,7 @@
 #define USE_AREAS
 #define USE_BINARY_SENSOR
 #define USE_BUTTON
+#define USE_CAMERA
 #define USE_CLIMATE
 #define USE_COVER
 #define USE_DATETIME
@@ -32,6 +33,7 @@
 #define USE_DEEP_SLEEP
 #define USE_DEVICES
 #define USE_DISPLAY
+#define USE_ENTITY_ICON
 #define USE_ESP32_IMPROV_STATE_CALLBACK
 #define USE_EVENT
 #define USE_FAN
@@ -106,7 +108,7 @@
 #define USE_API_CLIENT_DISCONNECTED_TRIGGER
 #define USE_API_NOISE
 #define USE_API_PLAINTEXT
-#define USE_API_YAML_SERVICES
+#define USE_API_SERVICES
 #define USE_MD5
 #define USE_MQTT
 #define USE_NETWORK
@@ -144,7 +146,6 @@
 #define USE_ESP32_BLE
 #define USE_ESP32_BLE_CLIENT
 #define USE_ESP32_BLE_SERVER
-#define USE_ESP32_CAMERA
 #define USE_I2C
 #define USE_IMPROV
 #define USE_MICROPHONE
