@@ -40,8 +40,8 @@ LIST_ENTITIES_HANDLER(lock, lock::Lock, ListEntitiesLockResponse)
 #ifdef USE_VALVE
 LIST_ENTITIES_HANDLER(valve, valve::Valve, ListEntitiesValveResponse)
 #endif
-#ifdef USE_ESP32_CAMERA
-LIST_ENTITIES_HANDLER(camera, esp32_camera::ESP32Camera, ListEntitiesCameraResponse)
+#ifdef USE_CAMERA
+LIST_ENTITIES_HANDLER(camera, camera::Camera, ListEntitiesCameraResponse)
 #endif
 #ifdef USE_CLIMATE
 LIST_ENTITIES_HANDLER(climate, climate::Climate, ListEntitiesClimateResponse)
@@ -83,10 +83,12 @@ bool ListEntitiesIterator::on_end() { return this->client_->send_list_info_done(
 
 ListEntitiesIterator::ListEntitiesIterator(APIConnection *client) : client_(client) {}
 
+#ifdef USE_API_SERVICES
 bool ListEntitiesIterator::on_service(UserServiceDescriptor *service) {
   auto resp = service->encode_list_service_response();
   return this->client_->send_message(resp);
 }
+#endif
 
 }  // namespace api
 }  // namespace esphome
