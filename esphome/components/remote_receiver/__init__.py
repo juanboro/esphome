@@ -1,6 +1,7 @@
 from esphome import pins
 import esphome.codegen as cg
 from esphome.components import esp32, esp32_rmt, remote_base
+from esphome.config_helpers import filter_source_files_from_platform
 import esphome.config_validation as cv
 from esphome.const import (
     CONF_BUFFER_SIZE,
@@ -15,6 +16,7 @@ from esphome.const import (
     CONF_TYPE,
     CONF_USE_DMA,
     CONF_VALUE,
+    PlatformFramework,
 )
 from esphome.core import CORE, TimePeriod
 
@@ -153,6 +155,15 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
     ).extend(cv.COMPONENT_SCHEMA)
 )
 
+FILTER_SOURCE_FILES = filter_source_files_from_platform(
+    {
+        "remote_receiver_esp32.cpp": {
+            PlatformFramework.ESP32_ARDUINO,
+            PlatformFramework.ESP32_IDF,
+        },
+    }
+)
+
 
 async def to_code(config):
     pin = await cg.gpio_pin_expression(config[CONF_PIN])
@@ -189,6 +200,7 @@ async def to_code(config):
     cg.add(var.set_buffer_size(config[CONF_BUFFER_SIZE]))
     cg.add(var.set_filter_us(config[CONF_FILTER]))
     cg.add(var.set_idle_us(config[CONF_IDLE]))
+
     if (
         (CONF_SHARE_TX in config)
         and (CONF_USE_ESP32_RMT in config)
