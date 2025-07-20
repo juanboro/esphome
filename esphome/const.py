@@ -21,6 +21,7 @@ class Platform(StrEnum):
     HOST = "host"
     LIBRETINY_OLDSTYLE = "libretiny"
     LN882X = "ln882x"
+    NRF52 = "nrf52"
     RP2040 = "rp2040"
     RTL87XX = "rtl87xx"
 
@@ -31,6 +32,7 @@ class Framework(StrEnum):
     ARDUINO = "arduino"
     ESP_IDF = "esp-idf"
     NATIVE = "host"
+    ZEPHYR = "zephyr"
 
 
 class PlatformFramework(Enum):
@@ -47,6 +49,9 @@ class PlatformFramework(Enum):
     RTL87XX_ARDUINO = (Platform.RTL87XX, Framework.ARDUINO)
     LN882X_ARDUINO = (Platform.LN882X, Framework.ARDUINO)
 
+    # Zephyr framework platforms
+    NRF52_ZEPHYR = (Platform.NRF52, Framework.ZEPHYR)
+
     # Host platform (native)
     HOST_NATIVE = (Platform.HOST, Framework.NATIVE)
 
@@ -58,6 +63,7 @@ PLATFORM_ESP8266 = Platform.ESP8266
 PLATFORM_HOST = Platform.HOST
 PLATFORM_LIBRETINY_OLDSTYLE = Platform.LIBRETINY_OLDSTYLE
 PLATFORM_LN882X = Platform.LN882X
+PLATFORM_NRF52 = Platform.NRF52
 PLATFORM_RP2040 = Platform.RP2040
 PLATFORM_RTL87XX = Platform.RTL87XX
 
@@ -90,6 +96,7 @@ CONF_ALL = "all"
 CONF_ALLOW_OTHER_USES = "allow_other_uses"
 CONF_ALPHA = "alpha"
 CONF_ALTITUDE = "altitude"
+CONF_ALTITUDE_COMPENSATION = "altitude_compensation"
 CONF_AMBIENT_LIGHT = "ambient_light"
 CONF_AMBIENT_PRESSURE_COMPENSATION = "ambient_pressure_compensation"
 CONF_AMBIENT_PRESSURE_COMPENSATION_SOURCE = "ambient_pressure_compensation_source"
@@ -915,6 +922,7 @@ CONF_SWING_MODE_COMMAND_TOPIC = "swing_mode_command_topic"
 CONF_SWING_MODE_STATE_TOPIC = "swing_mode_state_topic"
 CONF_SWING_OFF_ACTION = "swing_off_action"
 CONF_SWING_VERTICAL_ACTION = "swing_vertical_action"
+CONF_SWITCH = "switch"
 CONF_SWITCH_DATAPOINT = "switch_datapoint"
 CONF_SWITCHES = "switches"
 CONF_SYNC = "sync"
@@ -1187,6 +1195,7 @@ UNIT_WATT = "W"
 UNIT_WATT_HOURS = "Wh"
 
 # device classes
+DEVICE_CLASS_ABSOLUTE_HUMIDITY = "absolute_humidity"
 DEVICE_CLASS_APPARENT_POWER = "apparent_power"
 DEVICE_CLASS_AQI = "aqi"
 DEVICE_CLASS_AREA = "area"
