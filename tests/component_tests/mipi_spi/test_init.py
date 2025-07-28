@@ -16,9 +16,9 @@ from esphome.components.esp32 import (
     VARIANTS,
 )
 from esphome.components.esp32.gpio import validate_gpio_pin
+from esphome.components.mipi import CONF_NATIVE_HEIGHT
 from esphome.components.mipi_spi.display import (
     CONF_BUS_MODE,
-    CONF_NATIVE_HEIGHT,
     CONFIG_SCHEMA,
     FINAL_VALIDATE_SCHEMA,
     MODELS,
@@ -266,7 +266,7 @@ def test_framework_specific_errors(
 
     with pytest.raises(
         cv.Invalid,
-        match=r"This feature is only available with frameworks \['esp-idf'\]",
+        match=r"This feature is only available with framework\(s\) esp-idf",
     ):
         run_schema_validation({"model": "wt32-sc01-plus"})
 
