@@ -1038,13 +1038,14 @@ void NoiseEncryptionSetKeyRequest::dump_to(std::string &out) const {
 }
 void NoiseEncryptionSetKeyResponse::dump_to(std::string &out) const { dump_field(out, "success", this->success); }
 #endif
+#ifdef USE_API_HOMEASSISTANT_SERVICES
 void SubscribeHomeassistantServicesRequest::dump_to(std::string &out) const {
   out.append("SubscribeHomeassistantServicesRequest {}");
 }
 void HomeassistantServiceMap::dump_to(std::string &out) const {
   MessageDumpHelper helper(out, "HomeassistantServiceMap");
   dump_field(out, "key", this->key_ref_);
-  dump_field(out, "value", this->value_ref_);
+  dump_field(out, "value", this->value);
 }
 void HomeassistantServiceResponse::dump_to(std::string &out) const {
   MessageDumpHelper helper(out, "HomeassistantServiceResponse");
@@ -1066,6 +1067,7 @@ void HomeassistantServiceResponse::dump_to(std::string &out) const {
   }
   dump_field(out, "is_event", this->is_event);
 }
+#endif
 #ifdef USE_API_HOMEASSISTANT_STATES
 void SubscribeHomeAssistantStatesRequest::dump_to(std::string &out) const {
   out.append("SubscribeHomeAssistantStatesRequest {}");
