@@ -16,8 +16,7 @@
 
 #include <algorithm>
 
-namespace esphome {
-namespace api {
+namespace esphome::api {
 
 static const char *const TAG = "api";
 
@@ -184,9 +183,9 @@ void APIServer::loop() {
 
     // Rare case: handle disconnection
 #ifdef USE_API_CLIENT_DISCONNECTED_TRIGGER
-    this->client_disconnected_trigger_->trigger(client->client_info_, client->client_peername_);
+    this->client_disconnected_trigger_->trigger(client->client_info_.name, client->client_info_.peername);
 #endif
-    ESP_LOGV(TAG, "Remove connection %s", client->client_info_.c_str());
+    ESP_LOGV(TAG, "Remove connection %s", client->client_info_.name.c_str());
 
     // Swap with the last element and pop (avoids expensive vector shifts)
     if (client_index < this->clients_.size() - 1) {
@@ -376,6 +375,7 @@ void APIServer::send_homeassistant_service_call(const HomeassistantServiceRespon
   }
 }
 
+#ifdef USE_API_HOMEASSISTANT_STATES
 void APIServer::subscribe_home_assistant_state(std::string entity_id, optional<std::string> attribute,
                                                std::function<void(std::string)> f) {
   this->state_subs_.push_back(HomeAssistantStateSubscription{
@@ -399,6 +399,7 @@ void APIServer::get_home_assistant_state(std::string entity_id, optional<std::st
 const std::vector<APIServer::HomeAssistantStateSubscription> &APIServer::get_state_subs() const {
   return this->state_subs_;
 }
+#endif
 
 uint16_t APIServer::get_port() const { return this->port_; }
 
@@ -483,6 +484,5 @@ bool APIServer::teardown() {
   return this->clients_.empty();
 }
 
-}  // namespace api
-}  // namespace esphome
+}  // namespace esphome::api
 #endif
