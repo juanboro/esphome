@@ -18,10 +18,10 @@
 #include <esp_bt.h>
 #include <esp_bt_device.h>
 
-namespace esphome {
-namespace bluetooth_proxy {
+namespace esphome::bluetooth_proxy {
 
 static const esp_err_t ESP_GATT_NOT_CONNECTED = -1;
+static const int DONE_SENDING_SERVICES = -2;
 
 using namespace esp32_ble_client;
 
@@ -131,9 +131,6 @@ class BluetoothProxy : public esp32_ble_tracker::ESPBTDeviceListener, public Com
   }
 
  protected:
-#ifdef USE_ESP32_BLE_DEVICE
-  void send_api_packet_(const esp32_ble_tracker::ESPBTDevice &device);
-#endif
   void send_bluetooth_scanner_state_(esp32_ble_tracker::ScannerState state);
 
   BluetoothConnection *get_connection_(uint64_t address, bool reserve);
@@ -149,7 +146,10 @@ class BluetoothProxy : public esp32_ble_tracker::ESPBTDeviceListener, public Com
   std::vector<api::BluetoothLERawAdvertisement> advertisement_pool_;
   std::unique_ptr<api::BluetoothLERawAdvertisementsResponse> response_;
 
-  // Group 3: 1-byte types grouped together
+  // Group 3: 4-byte types
+  uint32_t last_advertisement_flush_time_{0};
+
+  // Group 4: 1-byte types grouped together
   bool active_;
   uint8_t advertisement_count_{0};
   // 2 bytes used, 2 bytes padding
@@ -157,7 +157,6 @@ class BluetoothProxy : public esp32_ble_tracker::ESPBTDeviceListener, public Com
 
 extern BluetoothProxy *global_bluetooth_proxy;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
-}  // namespace bluetooth_proxy
-}  // namespace esphome
+}  // namespace esphome::bluetooth_proxy
 
 #endif  // USE_ESP32
