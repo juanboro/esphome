@@ -419,10 +419,27 @@ async def _add_automations(config):
         await automation.build_automation(trigger, [], conf)
 
 
+# Datetime component has special subtypes that need additional defines
+DATETIME_SUBTYPES = {"date", "time", "datetime"}
+
+
 @coroutine_with_priority(-100.0)
-async def _add_platform_reserves() -> None:
+async def _add_platform_defines() -> None:
+    # Generate compile-time defines for platforms that have actual entities
+    # Only add USE_* and count defines when there are entities
     for platform_name, count in sorted(CORE.platform_counts.items()):
-        cg.add(cg.RawStatement(f"App.reserve_{platform_name}({count});"), prepend=True)
+        if count <= 0:
+            continue
+
+        define_name = f"ESPHOME_ENTITY_{platform_name.upper()}_COUNT"
+        cg.add_define(define_name, count)
+
+        # Datetime subtypes only use USE_DATETIME_* defines
+        if platform_name in DATETIME_SUBTYPES:
+            cg.add_define(f"USE_DATETIME_{platform_name.upper()}")
+        else:
+            # Regular platforms use USE_* defines
+            cg.add_define(f"USE_{platform_name.upper()}")
 
 
 @coroutine_with_priority(100.0)
@@ -447,7 +464,7 @@ async def to_code(config: ConfigType) -> None:
         cg.RawStatement(f"App.reserve_components({len(CORE.component_ids)});"),
     )
 
-    CORE.add_job(_add_platform_reserves)
+    CORE.add_job(_add_platform_defines)
 
     CORE.add_job(_add_automations, config)
 
