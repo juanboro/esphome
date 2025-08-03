@@ -256,6 +256,7 @@ OffsetFilter = sensor_ns.class_("OffsetFilter", Filter)
 MultiplyFilter = sensor_ns.class_("MultiplyFilter", Filter)
 FilterOutValueFilter = sensor_ns.class_("FilterOutValueFilter", Filter)
 ThrottleFilter = sensor_ns.class_("ThrottleFilter", Filter)
+ThrottleWithPriorityFilter = sensor_ns.class_("ThrottleWithPriorityFilter", Filter)
 TimeoutFilter = sensor_ns.class_("TimeoutFilter", Filter, cg.Component)
 DebounceFilter = sensor_ns.class_("DebounceFilter", Filter, cg.Component)
 HeartbeatFilter = sensor_ns.class_("HeartbeatFilter", Filter, cg.Component)
@@ -332,6 +333,7 @@ def sensor_schema(
     device_class: str = cv.UNDEFINED,
     state_class: str = cv.UNDEFINED,
     entity_category: str = cv.UNDEFINED,
+    filters: list = cv.UNDEFINED,
 ) -> cv.Schema:
     schema = {}
 
@@ -346,6 +348,7 @@ def sensor_schema(
         (CONF_DEVICE_CLASS, device_class, validate_device_class),
         (CONF_STATE_CLASS, state_class, validate_state_class),
         (CONF_ENTITY_CATEGORY, entity_category, sensor_entity_category),
+        (CONF_FILTERS, filters, validate_filters),
     ]:
         if default is not cv.UNDEFINED:
             schema[cv.Optional(key, default=default)] = validator
@@ -591,6 +594,29 @@ async def or_filter_to_code(config, filter_id):
 )
 async def throttle_filter_to_code(config, filter_id):
     return cg.new_Pvariable(filter_id, config)
+
+
+TIMEOUT_WITH_PRIORITY_SCHEMA = cv.maybe_simple_value(
+    {
+        cv.Required(CONF_TIMEOUT): cv.positive_time_period_milliseconds,
+        cv.Optional(CONF_VALUE, default="nan"): cv.Any(
+            cv.templatable(cv.float_), [cv.templatable(cv.float_)]
+        ),
+    },
+    key=CONF_TIMEOUT,
+)
+
+
+@FILTER_REGISTRY.register(
+    "throttle_with_priority",
+    ThrottleWithPriorityFilter,
+    TIMEOUT_WITH_PRIORITY_SCHEMA,
+)
+async def throttle_with_priority_filter_to_code(config, filter_id):
+    if not isinstance(config[CONF_VALUE], list):
+        config[CONF_VALUE] = [config[CONF_VALUE]]
+    template_ = [await cg.templatable(x, [], float) for x in config[CONF_VALUE]]
+    return cg.new_Pvariable(filter_id, config[CONF_TIMEOUT], template_)
 
 
 @FILTER_REGISTRY.register(
@@ -1113,5 +1139,4 @@ def _lstsq(a, b):
 
 @coroutine_with_priority(100.0)
 async def to_code(config):
-    cg.add_define("USE_SENSOR")
     cg.add_global(sensor_ns.using)
