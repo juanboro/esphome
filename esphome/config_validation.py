@@ -291,6 +291,8 @@ class Version:
     extra: str = ""
 
     def __str__(self):
+        if self.extra:
+            return f"{self.major}.{self.minor}.{self.patch}-{self.extra}"
         return f"{self.major}.{self.minor}.{self.patch}"
 
     @classmethod
@@ -1866,7 +1868,7 @@ def validate_registry_entry(name, registry):
 
 def none(value):
     if value in ("none", "None"):
-        return None
+        return
     raise Invalid("Must be none")
 
 
