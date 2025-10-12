@@ -38,8 +38,6 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   // receiver ISR setup must run after rmt transmitter setup to allow the same GPIO to be used by both
   // (related: rmt_transmitter setup must run AFTER rmt receiver setup)
   float get_setup_priority() const override { return setup_priority::DATA - 2; }
-  void set_carrier_duty_percent(uint8_t carrier_duty_percent) { this->carrier_duty_percent_ = carrier_duty_percent; }
-  void set_carrier_frequency(uint32_t carrier_frequency) { this->carrier_frequency_ = carrier_frequency; }
 #endif
 
   void set_buffer_size(uint32_t buffer_size) { this->buffer_size_ = buffer_size; }
@@ -48,18 +46,6 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void set_no_init_pin(bool no_init_pin) { this->no_init_pin_ = no_init_pin; }
 
  protected:
-#ifdef USE_ESP32
-  void decode_rmt_(rmt_symbol_word_t *item, size_t item_count);
-  rmt_channel_handle_t channel_{NULL};
-  uint32_t filter_symbols_{0};
-  uint32_t receive_symbols_{0};
-  bool with_dma_{false};
-  uint32_t carrier_frequency_{0};
-  uint8_t carrier_duty_percent_{100};
-  esp_err_t error_code_{ESP_OK};
-  std::string error_string_{""};
-#endif
-
 #if defined(USE_ESP8266) || defined(USE_LIBRETINY) || defined(USE_ESP32)
   RemoteReceiverComponentStore store_;
   HighFrequencyLoopRequester high_freq_;
