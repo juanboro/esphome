@@ -46,6 +46,7 @@ class RemoteReceiverComponent : public remote_base::RemoteReceiverBase,
   void set_no_init_pin(bool no_init_pin) { this->no_init_pin_ = no_init_pin; }
 
  protected:
+#if defined(USE_ESP8266) || defined(USE_LIBRETINY) || defined(USE_ESP32)
   RemoteReceiverComponentStore store_;
   HighFrequencyLoopRequester high_freq_;
 
