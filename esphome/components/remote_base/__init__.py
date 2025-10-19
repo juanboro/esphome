@@ -1692,6 +1692,53 @@ async def samsung36_action(var, config, args):
     cg.add(var.set_command(template_))
 
 
+# Sofucor
+(
+    SofucorData,
+    SofucorBinarySensor,
+    SofucorTrigger,
+    SofucorAction,
+    SofucorDumper,
+) = declare_protocol("Sofucor")
+Sofucor_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_ADDRESS): cv.hex_uint16_t,
+        cv.Required(CONF_COMMAND): cv.hex_uint8_t,
+    }
+)
+
+
+@register_binary_sensor("sofucor", SofucorBinarySensor, Sofucor_SCHEMA)
+def sofucor_binary_sensor(var, config):
+    cg.add(
+        var.set_data(
+            cg.StructInitializer(
+                SofucorData,
+                ("address", config[CONF_ADDRESS]),
+                ("command", config[CONF_COMMAND]),
+            )
+        )
+    )
+
+
+@register_trigger("sofucor", SofucorTrigger, SofucorData)
+def sofucor_trigger(var, config):
+    pass
+
+
+@register_dumper("sofucor", SofucorDumper)
+def sofucor_dumper(var, config):
+    pass
+
+
+@register_action("sofucor", SofucorAction, Sofucor_SCHEMA)
+async def sofucor_action(var, config, args):
+    template_ = await cg.templatable(config[CONF_ADDRESS], args, cg.uint16)
+    cg.add(var.set_address(template_))
+    template_ = await cg.templatable(config[CONF_COMMAND], args, cg.uint8)
+    cg.add(var.set_command(template_))
+
+
 # Toshiba AC
 (
     ToshibaAcData,
