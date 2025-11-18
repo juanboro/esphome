@@ -2,9 +2,8 @@
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
-#ifdef USE_ESP32
-#include <driver/gpio.h>
-#endif
+
+#if defined(USE_LIBRETINY) || defined(USE_ESP8266)
 
 namespace esphome {
 namespace remote_receiver {
@@ -28,21 +27,11 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
   if (time_since_change <= arg->filter_us)
     return;
 
-  arg->buffer_write_at = next;
-  arg->buffer[arg->buffer_write_at] = now;
+  arg->buffer[arg->buffer_write_at = next] = now;  // NOLINT(clang-diagnostic-deprecated-volatile)
 }
 
 void RemoteReceiverComponent::setup() {
-  if (!this->no_init_pin_) {
-    this->pin_->setup();
-#ifdef USE_ESP32
-    if (this->pin_->get_flags() & gpio::FLAG_PULLUP) {
-      gpio_pullup_en(gpio_num_t(this->pin_->get_pin()));
-    } else {
-      gpio_pullup_dis(gpio_num_t(this->pin_->get_pin()));
-    }
-#endif
-  }
+  this->pin_->setup();
   auto &s = this->store_;
   s.filter_us = this->filter_us_;
   s.pin = this->pin_->to_isr();
@@ -132,3 +121,5 @@ void RemoteReceiverComponent::loop() {
 
 }  // namespace remote_receiver
 }  // namespace esphome
+
+#endif

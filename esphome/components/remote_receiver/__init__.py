@@ -24,13 +24,9 @@ from esphome.core import CORE, TimePeriod
 
 CONF_FILTER_SYMBOLS = "filter_symbols"
 CONF_RECEIVE_SYMBOLS = "receive_symbols"
-CONF_USE_ESP32_RMT = "use_esp32_rmt"
-CONF_ESP32_ID = "esp32_rmt_id"
-CONF_SHARE_TX = "esp32_share_rmt_tx"
 
 AUTO_LOAD = ["remote_base"]
 remote_receiver_ns = cg.esphome_ns.namespace("remote_receiver")
-remote_receiver_esp32_ns = cg.esphome_ns.namespace("remote_receiver_esp32")
 remote_base_ns = cg.esphome_ns.namespace("remote_base")
 
 ToleranceMode = remote_base_ns.enum("ToleranceMode")
@@ -62,10 +58,6 @@ TOLERANCE_SCHEMA = cv.typed_schema(
 )
 
 RemoteReceiverComponent = remote_receiver_ns.class_(
-    "RemoteReceiverComponent", remote_base.RemoteReceiverBase, cg.Component
-)
-
-RemoteReceiverESPRMTComponent = remote_receiver_esp32_ns.class_(
     "RemoteReceiverComponent", remote_base.RemoteReceiverBase, cg.Component
 )
 
@@ -108,14 +100,10 @@ def validate_tolerance(value):
 
 
 MULTI_CONF = True
-
-
 CONFIG_SCHEMA = remote_base.validate_triggers(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(RemoteReceiverComponent),
-            cv.GenerateID(CONF_ESP32_ID): cv.declare_id(RemoteReceiverESPRMTComponent),
-            cv.Optional(CONF_USE_ESP32_RMT): cv.All(cv.only_on_esp32, cv.boolean),
             cv.Required(CONF_PIN): cv.All(pins.internal_gpio_input_pin_schema),
             cv.Optional(CONF_DUMP, default=[]): remote_base.validate_dumpers,
             cv.Optional(CONF_TOLERANCE, default="25%"): validate_tolerance,
@@ -163,10 +151,6 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
                 ),
                 cv.boolean,
             ),
-            cv.Optional(CONF_SHARE_TX): cv.All(
-                cv.only_on_esp32,
-                cv.boolean,
-            ),
             cv.SplitDefault(CONF_CARRIER_DUTY_PERCENT, esp32=100): cv.All(
                 cv.only_on_esp32,
                 cv.percentage_int,
@@ -181,23 +165,11 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
     .add_extra(validate_config)
 )
 
-FILTER_SOURCE_FILES = filter_source_files_from_platform(
-    {
-        "remote_receiver_esp32.cpp": {
-            PlatformFramework.ESP32_ARDUINO,
-            PlatformFramework.ESP32_IDF,
-        },
-    }
-)
-
 
 async def to_code(config):
     pin = await cg.gpio_pin_expression(config[CONF_PIN])
-    if CORE.is_esp32 and (
-        CONF_USE_ESP32_RMT not in config or config[CONF_USE_ESP32_RMT]
-    ):
-        config[CONF_ESP32_ID].id = config[CONF_ID].id
-        var = cg.new_Pvariable(config[CONF_ESP32_ID], pin)
+    if CORE.is_esp32:
+        var = cg.new_Pvariable(config[CONF_ID], pin)
         cg.add(var.set_rmt_symbols(config[CONF_RMT_SYMBOLS]))
         cg.add(var.set_receive_symbols(config[CONF_RECEIVE_SYMBOLS]))
         if CONF_USE_DMA in config:
@@ -229,9 +201,18 @@ async def to_code(config):
     cg.add(var.set_filter_us(config[CONF_FILTER]))
     cg.add(var.set_idle_us(config[CONF_IDLE]))
 
-    if (
-        (CONF_SHARE_TX in config)
-        and (CONF_USE_ESP32_RMT in config)
-        and (not config[CONF_USE_ESP32_RMT])
-    ):
-        cg.add(var.set_no_init_pin(config[CONF_SHARE_TX]))
+
+FILTER_SOURCE_FILES = filter_source_files_from_platform(
+    {
+        "remote_receiver_esp32.cpp": {
+            PlatformFramework.ESP32_ARDUINO,
+            PlatformFramework.ESP32_IDF,
+        },
+        "remote_receiver.cpp": {
+            PlatformFramework.ESP8266_ARDUINO,
+            PlatformFramework.BK72XX_ARDUINO,
+            PlatformFramework.RTL87XX_ARDUINO,
+            PlatformFramework.LN882X_ARDUINO,
+        },
+    }
+)

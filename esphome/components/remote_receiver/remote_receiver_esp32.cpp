@@ -1,10 +1,11 @@
-#ifdef USE_ESP32
-#include "remote_receiver_esp32.h"
+#include "remote_receiver.h"
 #include "esphome/core/log.h"
+
+#ifdef USE_ESP32
 #include <driver/gpio.h>
 
 namespace esphome {
-namespace remote_receiver_esp32 {
+namespace remote_receiver {
 
 static const char *const TAG = "remote_receiver.esp32";
 #ifdef USE_ESP32_VARIANT_ESP32H2
@@ -247,7 +248,7 @@ void RemoteReceiverComponent::decode_rmt_(rmt_symbol_word_t *item, size_t item_c
   }
 }
 
-}  // namespace remote_receiver_esp32
+}  // namespace remote_receiver
 }  // namespace esphome
 
 #endif
