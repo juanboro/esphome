@@ -29,7 +29,8 @@ jobs:
           git merge --no-edit upstream/dev
           git push origin dev
 
-          current_branches="esp32_soft_rmt fix_rc5_recv udp_broadcast girs tcp_server remote_sofucor_fan"
+          #current_branches="esp32_soft_rmt fix_rc5_recv udp_broadcast girs tcp_server remote_sofucor_fan"
+          current_branches="fix_rc5_recv udp_broadcast girs tcp_server remote_sofucor_fan"
           for branch in $current_branches
           do
             git checkout --track origin/$branch
