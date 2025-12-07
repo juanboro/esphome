@@ -17,8 +17,8 @@ This branch *attempts* to stay up to date with the latest ESPHome dev branch on 
 
 <a href="https://esphome.io/">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://esphome.io/_static/logo-text-on-dark.svg", alt="ESPHome Logo">
-    <img src="https://esphome.io/_static/logo-text-on-light.svg" alt="ESPHome Logo">
+    <source media="(prefers-color-scheme: dark)" srcset="https://media.esphome.io/logo/logo-text-on-dark.svg">
+    <img src="https://media.esphome.io/logo/logo-text-on-light.svg" alt="ESPHome Logo">
   </picture>
 </a>
 
