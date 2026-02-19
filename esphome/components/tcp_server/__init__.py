@@ -16,9 +16,17 @@ DEPENDENCIES = ["network"]
 
 
 def AUTO_LOAD():
-    if CORE.using_esp_idf:
+    # Socket component needed for platforms using socket-based implementation
+    # ESP32, ESP8266, RP2040, and LibreTiny use AsyncTCP libraries, others use sockets
+    if (
+        not CORE.is_esp32
+        and not CORE.is_esp8266
+        and not CORE.is_rp2040
+        and not CORE.is_libretiny
+    ):
         return ["socket", "uart"]
-    return ["async_tcp", "uart"]
+    else:
+        return ["async_tcp", "uart"]
 
 
 MULTI_CONF = True
