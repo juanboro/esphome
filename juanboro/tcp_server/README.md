@@ -96,7 +96,7 @@ This is heavily based on this (and everything it is based on): [esphome-stream-s
 
 ESPHome Mysteries
 -----------------
-Given the fluid nature of IDF platforms, ESPHome, etc - this is likely to break as things are updated. The state of sockets isn't exactly clearly docmented as best I can tell for ESPHome.  This tries to use [AsyncTCP](https://github.com/ESP32Async/AsyncTCP) when it is available - except it isn't available in ESPHome for the ESP-IDF platform (not clear why it can't be since I believe Arduino is now available to ESP-IDF).  
+Given the fluid nature of IDF platforms, ESPHome, etc - this is likely to break as things are updated. The state of sockets isn't exactly clearly docmented as best I can tell for ESPHome.  This tries to use [AsyncTCP](https://github.com/ESP32Async/AsyncTCP) and variants on platforms where available.  
 
 Also per: [this](https://developers.esphome.io/contributing/code/) -- I have no idea how to *properly* understand/do what is wanted by this bullet: 
 - Components specifically should not directly access other components -- for example, to publish to MQTT topics.
