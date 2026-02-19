@@ -42,7 +42,7 @@ void TCPServerBaseComponent::dump_config() {
   std::string ip_str = "";
   for (auto &ip : network::get_ip_addresses()) {
     if (ip.is_set())
-      ip_str += " " + ip.str();
+      ip_str += " " + std::string(ip.str_to(this->buf_));
   }
   ESP_LOGCONFIG(TAG, "  Address:%s", ip_str.c_str());
   ESP_LOGCONFIG(TAG, "  Port: %u", this->port_);
@@ -50,7 +50,9 @@ void TCPServerBaseComponent::dump_config() {
 
 void TCPServerBaseComponent::set_count_sensor(binary_sensor::BinarySensor *sensor) { this->count_sensor_ = sensor; }
 
-#ifdef USE_ESP_IDF
+#if !defined(USE_ESP32) && !defined(USE_ESP8266) && !defined(USE_RP2040) && !defined(USE_LIBRETINY) && \
+    (defined(USE_SOCKET_IMPL_LWIP_SOCKETS) || defined(USE_SOCKET_IMPL_BSD_SOCKETS))
+
 void TCPServerComponent::setup() {
   TCPServerBaseComponent::setup();
 
@@ -230,7 +232,8 @@ void TCPServerComponent::setup() {
 }
 
 void TCPServerComponent::handleNewClient(AsyncClient *client) {
-  std::string identifier = str_sprintf("%s:%d", client->remoteIP().toString().c_str(), client->remotePort());
+  snprintf(this->buf_, sizeof(this->buf_), "%p", client);
+  std::string identifier(this->buf_);
   ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
 
   this->clients_.emplace_back(client, identifier);
@@ -247,7 +250,8 @@ void TCPServerComponent::handleNewClient(AsyncClient *client) {
 }
 
 void TCPServerComponent::handleData(AsyncClient *client, void *data, size_t len) {
-  std::string identifier = str_sprintf("%s:%d", client->remoteIP().toString().c_str(), client->remotePort());
+  snprintf(this->buf_, sizeof(this->buf_), "%p", client);
+  std::string identifier(this->buf_);
   ESP_LOGD(TAG, "Received data from client %s of len %d", identifier.c_str(), len);
   for (auto *trigger : this->triggers_onmsg_) {
     trigger->trigger(identifier.c_str(), (const char *) data, len);
@@ -258,7 +262,8 @@ void TCPServerComponent::handleData(AsyncClient *client, void *data, size_t len)
 }
 
 void TCPServerComponent::handleError(AsyncClient *client, int8_t error) {
-  std::string identifier = str_sprintf("%s:%d", client->remoteIP().toString().c_str(), client->remotePort());
+  snprintf(this->buf_, sizeof(this->buf_), "%p", client);
+  std::string identifier(this->buf_);
   ESP_LOGW(TAG, "Client %s encountered error: %d", identifier.c_str(), error);
   client->close();
 }
@@ -278,7 +283,8 @@ void TCPServerComponent::handleDisconnect(AsyncClient *client) {
 }
 
 void TCPServerComponent::handleTimeout(AsyncClient *client, uint32_t time) {
-  ESP_LOGW(TAG, "Client %s timed out after %u ms", client->remoteIP().toString().c_str(), time);
+  snprintf(this->buf_, sizeof(this->buf_), "%p", client);
+  ESP_LOGW(TAG, "Client %s timed out after %u ms", this->buf_, time);
   client->close();
 }
 
@@ -356,6 +362,6 @@ void TCPServerComponent::on_shutdown() {
 TCPServerComponent::Client::Client(AsyncClient *client, std::string identifier)
     : client(std::move(client)), identifier{identifier} {}
 
-#endif  // everything but esp-idf gets async tcp
+#endif
 }  // namespace tcp_server
 }  // namespace esphome

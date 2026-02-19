@@ -11,19 +11,14 @@ GPL-V3 and: https://github.com/tube0013/esphome-stream-server-v2
 #include "esphome/core/helpers.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
+#include "esphome/components/async_tcp/async_tcp.h"
 
 #include <string>
 #include <vector>
 
-#ifdef USE_ESP_IDF
+#if !defined(USE_ESP32) && !defined(USE_ESP8266) && !defined(USE_RP2040) && !defined(USE_LIBRETINY) && \
+    (defined(USE_SOCKET_IMPL_LWIP_SOCKETS) || defined(USE_SOCKET_IMPL_BSD_SOCKETS))
 #include "esphome/components/socket/socket.h"
-#else
-// https://registry.platformio.org/libraries/esphome/ESPAsyncTCP-esphome/examples/ClientServer/Server/Server.ino
-#ifdef ESP8266
-#include <ESPAsyncTCP.h>
-#else
-#include <AsyncTCP.h>
-#endif
 #endif
 
 namespace esphome {
@@ -80,7 +75,8 @@ class TCPServerBaseComponent : public Component {
   char buf_[128];
 };
 
-#ifdef USE_ESP_IDF
+#if !defined(USE_ESP32) && !defined(USE_ESP8266) && !defined(USE_RP2040) && !defined(USE_LIBRETINY) && \
+    (defined(USE_SOCKET_IMPL_LWIP_SOCKETS) || defined(USE_SOCKET_IMPL_BSD_SOCKETS))
 class TCPServerComponent : public TCPServerBaseComponent {
  public:
   TCPServerComponent() {}
