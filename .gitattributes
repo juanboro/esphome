@@ -1,6 +1,8 @@
 # Normalize line endings to LF in the repository
 * text eol=lf
 *.png binary
+*.gif binary
+*.apng binary
 
 # use ours for workflows
 .github/workflows/*.yml merge=ours
