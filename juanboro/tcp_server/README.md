@@ -4,7 +4,7 @@ Custom Component providing a tcp server for esphome
 TCP Server for ESPHome
 ======================
 
-Custom component for ESPHome to allow sending/receiving tcp messages. 
+Custom component for ESPHome to allow sending/receiving tcp messages.
 
 This component creates a TCP server listening on port 9000 (by default).  It allows you to define custom 'on_message' automations to forward messages via lambdas as desired, and to respond via a lambda call to the component.
 
@@ -19,7 +19,7 @@ Usage
 external_components:
   - source: github://juanboro/esphome
     components: [ tcp_server ]
-    
+
 tcp_server:
 ```
 
@@ -38,7 +38,7 @@ tcp_server:
       #   const char* client_id // c str client identifier
       then:
         - lambda: |-
-            id(echotcp).write(msg,len,client_id);  
+            id(echotcp).write(msg,len,client_id);
 
             // you can broadcast to all connected clients like this:
             //id(echotcp).write(msg,len);
@@ -83,7 +83,7 @@ tcp_server:
 ## ESP32 ESP-IDF platform
 By default the maximum number of socket connections is pretty small when using the ESP-IDF platform.  Consider increasing the number based on your needs using something like this:
 ```yaml
-esp32:  
+esp32:
   board: esp32dev
   framework:
     type: esp-idf
@@ -96,10 +96,9 @@ This is heavily based on this (and everything it is based on): [esphome-stream-s
 
 ESPHome Mysteries
 -----------------
-Given the fluid nature of IDF platforms, ESPHome, etc - this is likely to break as things are updated. The state of sockets isn't exactly clearly docmented as best I can tell for ESPHome.  This tries to use [AsyncTCP](https://github.com/ESP32Async/AsyncTCP) and variants on platforms where available.  
+Given the fluid nature of IDF platforms, ESPHome, etc - this is likely to break as things are updated. The state of sockets isn't exactly clearly docmented as best I can tell for ESPHome.  This tries to use [AsyncTCP](https://github.com/ESP32Async/AsyncTCP) and variants on platforms where available.
 
-Also per: [this](https://developers.esphome.io/contributing/code/) -- I have no idea how to *properly* understand/do what is wanted by this bullet: 
+Also per: [this](https://developers.esphome.io/contributing/code/) -- I have no idea how to *properly* understand/do what is wanted by this bullet:
 - Components specifically should not directly access other components -- for example, to publish to MQTT topics.
 
 Guidance from ESPHome experts would be appreciated.
-

@@ -52,10 +52,9 @@ girs:
 ```
 
 ## final notes
-This is still a work in progress.  There are surely some bugs, and I still have some additional parameters to expose to the yaml.  
+This is still a work in progress.  There are surely some bugs, and I still have some additional parameters to expose to the yaml.
 
-Also per: [this](https://developers.esphome.io/contributing/code/) -- I have no idea how to *properly* understand/do what is wanted by this bullet: 
+Also per: [this](https://developers.esphome.io/contributing/code/) -- I have no idea how to *properly* understand/do what is wanted by this bullet:
 - Components specifically should not directly access other components -- for example, to publish to MQTT topics.
 
 Guidance from ESPHome experts would be appreciated.
-
