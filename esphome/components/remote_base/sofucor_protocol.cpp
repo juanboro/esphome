@@ -72,7 +72,7 @@ optional<SofucorData> SofucorProtocol::decode(RemoteReceiveData src) {
     }
   }
 
-  if (((data >> 8) ^ data) & 0xff == 0xff) {
+  if ((((data >> 8) ^ data) & 0xff) == 0xff) {
     out.address = data >> 16;
     out.command = (data >> 8) & 0xff;
     return out;
