@@ -3,6 +3,11 @@
 
 set -e
 
+# Support conda and related friends...
+if [ -n "$CONDA_PREFIX" ]; then
+  VIRTUAL_ENV="$CONDA_PREFIX"
+fi
+
 cd "$(dirname "$0")/.."
 if [ ! -n "$VIRTUAL_ENV" ]; then
   if [ -x "$(command -v uv)" ]; then
