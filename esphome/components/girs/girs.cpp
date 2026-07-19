@@ -156,8 +156,8 @@ void GirsComponent::do_command(const std::string &cmd) {
     start = this->transmit_data_(cmd, start, frequency, endingLength, 1);        // transmit ending
 
     println(okString);
-  } else if ((can_rx_) && (strncmp(subcommand, "receive", 7) == 0)) {  // receive
-    rx_start_ = millis();  // send received data if within the timeout window
+  } else if ((can_rx_) && (subcommand == "receive")) {  // receive
+    rx_start_ = millis();                               // send received data if within the timeout window
   } else {
     println(errorString);
   }
