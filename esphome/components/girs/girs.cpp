@@ -116,8 +116,10 @@ void GirsComponent::do_command(const std::string &cmd) {
     return;
   }
 
-  char subcommand[16] = {0};
-  if (sscanf(cmd.c_str(), "%15s", subcommand) != 1) {
+  size_t space_pos = cmd.find(' ');
+  std::string subcommand = cmd.substr(0, space_pos);
+
+  if (subcommand.empty()) {
     println(errorString);
     return;
   }
@@ -189,7 +191,7 @@ bool GirsComponent::on_receive(remote_base::RemoteReceiveData data) {
           *bufp = '+';
           ++bufp;
         }
-        bufp += std::sprintf(bufp, "%d ", -last);
+        bufp = buf_append_printf(buffer, sizeof(buffer), bufp, "%ld ", -last);
       }
       last = dp;
 
@@ -197,7 +199,8 @@ bool GirsComponent::on_receive(remote_base::RemoteReceiveData data) {
         *bufp = '+';
         ++bufp;
       }
-      bufp += std::sprintf(bufp, "%d", dp);
+      bufp = buf_append_printf(buffer, sizeof(buffer), bufp, "%ld", dp);
+
       if ((bufp - buffer) > 128) {
         stream_out(std::string(buffer, bufp - buffer));
         bufp = buffer;
@@ -205,7 +208,7 @@ bool GirsComponent::on_receive(remote_base::RemoteReceiveData data) {
     }
 
     if (last > 0)
-      bufp += std::sprintf(bufp, " %d", -last);
+      bufp = buf_append_printf(buffer, sizeof(buffer), bufp, " %ld", -last);
 
     if ((bufp - buffer) > 0)
       stream_out(std::string(buffer, bufp - buffer));
