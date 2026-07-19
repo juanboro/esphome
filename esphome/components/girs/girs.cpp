@@ -191,7 +191,7 @@ bool GirsComponent::on_receive(remote_base::RemoteReceiveData data) {
           *bufp = '+';
           ++bufp;
         }
-        bufp = buf_append_printf(buffer, sizeof(buffer), bufp, "%ld ", -last);
+        bufp += std::sprintf(bufp, "%ld ", -last);  // NOLINT
       }
       last = dp;
 
@@ -199,8 +199,7 @@ bool GirsComponent::on_receive(remote_base::RemoteReceiveData data) {
         *bufp = '+';
         ++bufp;
       }
-      bufp = buf_append_printf(buffer, sizeof(buffer), bufp, "%ld", dp);
-
+      bufp += std::sprintf(bufp, "%ld", dp);  // NOLINT
       if ((bufp - buffer) > 128) {
         stream_out(std::string(buffer, bufp - buffer));
         bufp = buffer;
@@ -208,7 +207,7 @@ bool GirsComponent::on_receive(remote_base::RemoteReceiveData data) {
     }
 
     if (last > 0)
-      bufp = buf_append_printf(buffer, sizeof(buffer), bufp, " %ld", -last);
+      bufp += std::sprintf(bufp, " %ld", -last);  // NOLINT
 
     if ((bufp - buffer) > 0)
       stream_out(std::string(buffer, bufp - buffer));
