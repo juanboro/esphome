@@ -136,7 +136,7 @@ void TCPServerComponent::accept() {
 
       socket->setblocking(false);
 
-      std::string identifier = str_sprintf("%s:%d", socket->getpeername().c_str(), socket->get_fd());
+      std::string identifier = str_sprintf("%s:%d", socket->getpeername().c_str(), socket->get_fd());  // NOLINT
       this->clients_.emplace_back(std::move(socket), identifier);
       ESP_LOGD(TAG, "New client connected from %s", identifier.c_str());
 
@@ -284,7 +284,7 @@ void TCPServerComponent::handleDisconnect(AsyncClient *client) {
 
 void TCPServerComponent::handleTimeout(AsyncClient *client, uint32_t time) {
   snprintf(this->buf_, sizeof(this->buf_), "%p", client);
-  ESP_LOGW(TAG, "Client %s timed out after %u ms", this->buf_, time);
+  ESP_LOGW(TAG, "Client %s timed out after %lu ms", this->buf_, time);
   client->close();
 }
 
