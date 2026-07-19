@@ -17,16 +17,15 @@ DEPENDENCIES = ["network"]
 
 def AUTO_LOAD():
     # Socket component needed for platforms using socket-based implementation
-    # ESP32, ESP8266, RP2040, and LibreTiny use AsyncTCP libraries, others use sockets
+    # ESP32, ESP8266, RP2, and LibreTiny use AsyncTCP libraries, others use sockets
     if (
         not CORE.is_esp32
         and not CORE.is_esp8266
-        and not CORE.is_rp2040
+        and not CORE.is_rp2
         and not CORE.is_libretiny
     ):
         return ["socket", "uart"]
-    else:
-        return ["async_tcp", "uart"]
+    return ["async_tcp", "uart"]
 
 
 MULTI_CONF = True
