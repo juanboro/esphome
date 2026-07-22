@@ -49,32 +49,43 @@ TCPServerOnDisconnectTrigger = tcp_server_ns.class_(
 )
 
 
-CONFIG_SCHEMA = cv.Schema(
-    {
-        cv.GenerateID(): cv.declare_id(TCPServerComponent),
-        cv.Optional(CONF_ON_MESSAGE): automation.validate_automation(
-            {
-                cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCPServerTrigger),
-            }
-        ),
-        cv.Optional(CONF_ON_CONNECT): automation.validate_automation(
-            {
-                cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
-                    TCPServerOnConnectTrigger
-                ),
-            }
-        ),
-        cv.Optional(CONF_ON_DISCONNECT): automation.validate_automation(
-            {
-                cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
-                    TCPServerOnDisconnectTrigger
-                ),
-            }
-        ),
-        cv.Optional(CONF_PORT): cv.port,
-        cv.Optional(uart.CONF_UART_ID): cv.use_id(uart.UARTComponent),
-    }
-).extend(cv.COMPONENT_SCHEMA)
+def _consume_tcp_server_sockets(config):
+    """Register sockets for tcp_server server. 1 listen and 2 client"""
+    from esphome.components import socket
+
+    socket.consume_sockets(3, "tcp_server")(config)
+    return config
+
+
+CONFIG_SCHEMA = cv.All(
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(TCPServerComponent),
+            cv.Optional(CONF_ON_MESSAGE): automation.validate_automation(
+                {
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCPServerTrigger),
+                }
+            ),
+            cv.Optional(CONF_ON_CONNECT): automation.validate_automation(
+                {
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
+                        TCPServerOnConnectTrigger
+                    ),
+                }
+            ),
+            cv.Optional(CONF_ON_DISCONNECT): automation.validate_automation(
+                {
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
+                        TCPServerOnDisconnectTrigger
+                    ),
+                }
+            ),
+            cv.Optional(CONF_PORT): cv.port,
+            cv.Optional(uart.CONF_UART_ID): cv.use_id(uart.UARTComponent),
+        }
+    ).extend(cv.COMPONENT_SCHEMA),
+    _consume_tcp_server_sockets,
+)
 
 
 async def to_code(config):
