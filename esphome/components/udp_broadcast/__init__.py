@@ -18,20 +18,32 @@ def AUTO_LOAD():
 udp_broadcast_ns = cg.esphome_ns.namespace("udp_broadcast")
 UDPBroadcastComponent = udp_broadcast_ns.class_("UDPBroadcastComponent", cg.Component)
 
-CONFIG_SCHEMA = cv.Schema(
-    {
-        cv.GenerateID(): cv.declare_id(UDPBroadcastComponent),
-        cv.Optional(
-            CONF_ADDRESSES,
-            default=[
-                "255.255.255.255",
-            ],
-        ): cv.ensure_list(
-            cv.ipv4address,
-        ),
-        cv.Optional(CONF_PORT, default=5007): cv.port,
-    }
-).extend(cv.COMPONENT_SCHEMA)
+
+def _consume_udp_broadcast_sockets(config):
+    """Register sockets for tcp_server server. 1 listen and 2 client"""
+    from esphome.components import socket
+
+    socket.consume_sockets(1, "udp_broadcast", socket.SocketType.UDP)(config)
+    return config
+
+
+CONFIG_SCHEMA = cv.All(
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(UDPBroadcastComponent),
+            cv.Optional(
+                CONF_ADDRESSES,
+                default=[
+                    "255.255.255.255",
+                ],
+            ): cv.ensure_list(
+                cv.ipv4address,
+            ),
+            cv.Optional(CONF_PORT, default=5007): cv.port,
+        }
+    ).extend(cv.COMPONENT_SCHEMA),
+    _consume_udp_broadcast_sockets,
+)
 
 
 async def to_code(config):
