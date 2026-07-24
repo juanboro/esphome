@@ -80,16 +80,6 @@ tcp_server:
     uart_id: tcp_uart_id
 ```
 
-## ESP32 ESP-IDF platform
-By default the maximum number of socket connections is pretty small when using the ESP-IDF platform.  Consider increasing the number based on your needs using something like this:
-```yaml
-esp32:
-  board: esp32dev
-  framework:
-    type: esp-idf
-    sdkconfig_options:
-      CONFIG_LWIP_MAX_SOCKETS: "16"
-```
 
 ## final notes
 This is heavily based on this (and everything it is based on): [esphome-stream-server-v2](https://github.com/tube0013/esphome-stream-server-v2.git).  This component works quite well for me with [genmon](https://github.com/jgyates/genmon) similar to the setup done [here](https://github.com/gregmac/Genmon-ESP32-Serial-Bridge) - except I built my serial bridge using a ESP8266 instead of an ESP32.
