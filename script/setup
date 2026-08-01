@@ -14,13 +14,8 @@ if [ -n "$VIRTUAL_ENV" ]; then
   # esphome-venv). Install into it rather than creating a ./venv in the workspace.
   created_venv=false
 else
-  created_venv=true
-  if [ -x "$(command -v uv)" ]; then
-    uv venv --seed venv
-  else
-    python3 -m venv venv
-  fi
-  source venv/bin/activate
+  echo "do mamba activate please: mamba create -n esphome -y python uv pip"
+  exit
 fi
 
 if ! [ -x "$(command -v uv)" ]; then
