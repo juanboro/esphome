@@ -24,8 +24,8 @@ def AUTO_LOAD():
         and not CORE.is_rp2
         and not CORE.is_libretiny
     ):
-        return ["socket", "uart"]
-    return ["async_tcp", "uart"]
+        return ["socket", "uart", "binary_sensor"]
+    return ["async_tcp", "uart", "binary_sensor"]
 
 
 MULTI_CONF = True
