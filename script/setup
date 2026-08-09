@@ -3,19 +3,19 @@
 
 set -e
 
-# Support conda and related friends...
-if [ -n "$CONDA_PREFIX" ]; then
-  VIRTUAL_ENV="$CONDA_PREFIX"
-fi
-
 cd "$(dirname "$0")/.."
 if [ -n "$VIRTUAL_ENV" ]; then
   # A virtual environment is already active (e.g. the devcontainer's pre-provisioned
   # esphome-venv). Install into it rather than creating a ./venv in the workspace.
   created_venv=false
 else
-  echo "do mamba activate please: mamba create -n esphome -y python uv pip"
-  exit
+  created_venv=true
+  if [ -x "$(command -v uv)" ]; then
+    uv venv --seed venv
+  else
+    python3 -m venv venv
+  fi
+  source venv/bin/activate
 fi
 
 if ! [ -x "$(command -v uv)" ]; then
@@ -25,11 +25,7 @@ fi
 uv pip install setuptools wheel
 uv pip install -e ".[dev,test]" --config-settings editable_mode=compat
 
-# --overwrite replaces any hook already in place. Without it, prek finds a
-# previously installed pre-commit hook, moves it aside to
-# .git/hooks/pre-commit.legacy and keeps calling it, so every commit would
-# run both tools.
-prek install --overwrite
+pre-commit install
 
 mkdir -p .temp
 
